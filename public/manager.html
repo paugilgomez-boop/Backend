@@ -1,0 +1,138 @@
+<!doctype html>
+<html lang="es">
+<head>
+    <meta charset="utf-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1">
+    <title>TowerDefence Manager</title>
+    <link href="bootstrap/css/bootstrap.min.css" rel="stylesheet">
+    <link rel="stylesheet" href="css/manager.css">
+</head>
+<body>
+<nav class="navbar navbar-expand-lg navbar-dark bg-dark border-bottom border-success-subtle">
+    <div class="container-fluid px-4">
+        <a class="navbar-brand fw-semibold" href="#">TowerDefence</a>
+        <button class="navbar-toggler" type="button" data-bs-toggle="collapse" data-bs-target="#mainNavbar">
+            <span class="navbar-toggler-icon"></span>
+        </button>
+        <div class="collapse navbar-collapse" id="mainNavbar">
+            <ul class="navbar-nav me-auto mb-2 mb-lg-0">
+                <li class="nav-item"><a class="nav-link active" href="#dashboard">Panel</a></li>
+                <li class="nav-item"><a class="nav-link" href="#itemsSection">Items</a></li>
+                <li class="nav-item"><a class="nav-link" href="#inventorySection">Inventario</a></li>
+            </ul>
+            <span class="navbar-text small" id="sessionStatus">Sin sesion iniciada</span>
+        </div>
+    </div>
+</nav>
+
+<main class="container-fluid px-4 py-4" id="dashboard">
+    <div class="row g-4 align-items-stretch">
+        <section class="col-12 col-xl-4">
+            <div class="panel h-100">
+                <div class="panel-header">
+                    <div>
+                        <p class="section-label">Usuarios</p>
+                        <h1>Acceso y registro</h1>
+                    </div>
+                </div>
+                <ul class="nav nav-tabs compact-tabs" role="tablist">
+                    <li class="nav-item" role="presentation">
+                        <button class="nav-link active" data-bs-toggle="tab" data-bs-target="#loginPane" type="button">Login</button>
+                    </li>
+                    <li class="nav-item" role="presentation">
+                        <button class="nav-link" data-bs-toggle="tab" data-bs-target="#registerPane" type="button">Registro</button>
+                    </li>
+                </ul>
+                <div class="tab-content pt-3">
+                    <div class="tab-pane fade show active" id="loginPane">
+                        <form id="loginForm" class="vstack gap-3">
+                            <div><label class="form-label" for="loginUsername">Username</label><input class="form-control" id="loginUsername" required></div>
+                            <div><label class="form-label" for="loginPassword">Password</label><input class="form-control" id="loginPassword" type="password" required></div>
+                            <button class="btn btn-success w-100" type="submit">Entrar</button>
+                        </form>
+                    </div>
+                    <div class="tab-pane fade" id="registerPane">
+                        <form id="registerForm" class="vstack gap-3">
+                            <div class="row g-3">
+                                <div class="col-sm-6"><label class="form-label" for="registerId">ID</label><input class="form-control" id="registerId" required></div>
+                                <div class="col-sm-6"><label class="form-label" for="registerRole">Rol</label><select class="form-select" id="registerRole"><option value="PLAYER">Player</option><option value="ADMIN">Admin</option></select></div>
+                            </div>
+                            <div><label class="form-label" for="registerUsername">Username</label><input class="form-control" id="registerUsername" required></div>
+                            <div><label class="form-label" for="registerPassword">Password</label><input class="form-control" id="registerPassword" type="password" required></div>
+                            <div><label class="form-label" for="registerEmail">Email</label><input class="form-control" id="registerEmail" type="email"></div>
+                            <div class="row g-3">
+                                <div class="col-sm-6"><label class="form-label" for="registerSaldo">Saldo</label><input class="form-control" id="registerSaldo" type="number" min="0" step="0.01" value="100"></div>
+                                <div class="col-sm-6" id="levelGroup"><label class="form-label" for="registerLevel">Nivel</label><input class="form-control" id="registerLevel" type="number" min="0" value="1"></div>
+                                <div class="col-sm-6 d-none" id="permissionsGroup"><label class="form-label" for="registerPermissions">Permisos</label><input class="form-control" id="registerPermissions" value="ALL"></div>
+                            </div>
+                            <button class="btn btn-outline-success w-100" type="submit">Crear usuario</button>
+                        </form>
+                    </div>
+                </div>
+            </div>
+        </section>
+
+        <section class="col-12 col-xl-8" id="itemsSection">
+            <div class="panel h-100">
+                <div class="panel-header flex-wrap gap-3">
+                    <div><p class="section-label">Catalogo</p><h2>Items del juego</h2></div>
+                    <button class="btn btn-success" id="refreshItemsBtn" type="button">Actualizar</button>
+                </div>
+                <div class="row g-4">
+                    <div class="col-12 col-lg-5">
+                        <form id="itemForm" class="vstack gap-3 form-box">
+                            <input type="hidden" id="editingItemId">
+                            <div><label class="form-label" for="itemId">ID</label><input class="form-control" id="itemId" required></div>
+                            <div><label class="form-label" for="itemName">Nombre</label><input class="form-control" id="itemName" required></div>
+                            <div><label class="form-label" for="itemType">Tipo</label><select class="form-select" id="itemType"><option>WEAPON</option><option>ARMOR</option><option>CONSUMABLE</option><option>SKIN</option><option>BOOST</option></select></div>
+                            <div><label class="form-label" for="itemPrice">Precio</label><input class="form-control" id="itemPrice" type="number" min="0" step="0.01" required></div>
+                            <div><label class="form-label" for="itemDescription">Descripcion</label><textarea class="form-control" id="itemDescription" rows="3"></textarea></div>
+                            <div class="d-flex gap-2"><button class="btn btn-success flex-fill" id="saveItemBtn" type="submit">Guardar</button><button class="btn btn-outline-secondary" id="cancelEditBtn" type="button">Limpiar</button></div>
+                        </form>
+                    </div>
+                    <div class="col-12 col-lg-7">
+                        <div class="table-responsive">
+                            <table class="table table-hover align-middle mb-0">
+                                <thead><tr><th>Item</th><th>Tipo</th><th class="text-end">Precio</th><th class="text-end">Acciones</th></tr></thead>
+                                <tbody id="itemsTableBody"><tr><td colspan="4" class="text-center text-muted py-4">Sin items cargados</td></tr></tbody>
+                            </table>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </section>
+
+        <section class="col-12" id="inventorySection">
+            <div class="panel">
+                <div class="panel-header flex-wrap gap-3">
+                    <div><p class="section-label">Players</p><h2>Compra e inventario</h2></div>
+                    <div class="d-flex gap-2 inventory-tools"><input class="form-control" id="inventoryPlayerId" placeholder="ID player"><button class="btn btn-outline-success" id="loadInventoryBtn" type="button">Ver inventario</button></div>
+                </div>
+                <div class="row g-4">
+                    <div class="col-12 col-lg-4">
+                        <form id="buyForm" class="vstack gap-3 form-box">
+                            <div><label class="form-label" for="buyPlayerId">Player ID</label><input class="form-control" id="buyPlayerId" required></div>
+                            <div><label class="form-label" for="buyItemId">Item</label><select class="form-select" id="buyItemId" required></select></div>
+                            <div><label class="form-label" for="buyQuantity">Cantidad</label><input class="form-control" id="buyQuantity" type="number" min="1" value="1" required></div>
+                            <button class="btn btn-success w-100" type="submit">Comprar item</button>
+                        </form>
+                    </div>
+                    <div class="col-12 col-lg-8"><div class="row g-3" id="inventoryCards"><div class="col-12"><div class="empty-state">Busca un player para ver su inventario.</div></div></div></div>
+                </div>
+            </div>
+        </section>
+    </div>
+</main>
+
+<div class="toast-container position-fixed bottom-0 end-0 p-3">
+    <div id="appToast" class="toast align-items-center text-bg-dark border-0" role="alert">
+        <div class="d-flex"><div class="toast-body" id="toastMessage">Listo</div><button type="button" class="btn-close btn-close-white me-2 m-auto" data-bs-dismiss="toast"></button></div>
+    </div>
+</div>
+
+<script src="jquery/jquery-3.7.1.min.js"></script>
+<script src="bootstrap/js/bootstrap.bundle.min.js"></script>
+<script src="js/game-api.js"></script>
+<script src="js/manager.js"></script>
+</body>
+</html>

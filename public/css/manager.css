@@ -1,0 +1,155 @@
+:root {
+    --surface: #ffffff;
+    --surface-strong: #f4f7f5;
+    --ink: #17201a;
+    --muted: #657168;
+    --line: #dce5df;
+    --accent: #198754;
+    --accent-soft: #e8f5ee;
+}
+
+body {
+    min-height: 100vh;
+    background: #eef2ef;
+    color: var(--ink);
+    font-family: Arial, Helvetica, sans-serif;
+}
+
+.panel {
+    background: var(--surface);
+    border: 1px solid var(--line);
+    border-radius: 8px;
+    padding: 24px;
+    box-shadow: 0 12px 28px rgba(16, 24, 20, 0.07);
+}
+
+.panel-header {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    margin-bottom: 20px;
+}
+
+.section-label {
+    margin: 0 0 4px;
+    color: var(--accent);
+    font-size: 0.78rem;
+    font-weight: 700;
+    text-transform: uppercase;
+}
+
+h1, h2 {
+    margin: 0;
+    font-size: 1.35rem;
+    font-weight: 700;
+}
+
+.compact-tabs .nav-link {
+    color: var(--muted);
+    font-weight: 600;
+}
+
+.compact-tabs .nav-link.active {
+    color: var(--accent);
+}
+
+.form-box {
+    background: var(--surface-strong);
+    border: 1px solid var(--line);
+    border-radius: 8px;
+    padding: 18px;
+}
+
+.form-label {
+    color: #334038;
+    font-size: 0.88rem;
+    font-weight: 600;
+}
+
+.form-control, .form-select {
+    border-color: #cfd9d2;
+    border-radius: 6px;
+}
+
+.form-control:focus, .form-select:focus {
+    border-color: var(--accent);
+    box-shadow: 0 0 0 0.18rem rgba(25, 135, 84, 0.16);
+}
+
+.table {
+    --bs-table-hover-bg: var(--accent-soft);
+}
+
+.item-title {
+    display: block;
+    font-weight: 700;
+}
+
+.item-description {
+    display: block;
+    color: var(--muted);
+    font-size: 0.86rem;
+}
+
+.badge-type {
+    background: var(--accent-soft);
+    color: #0b5f35;
+    border: 1px solid #cce9d8;
+    font-weight: 700;
+}
+
+.inventory-tools {
+    min-width: min(100%, 420px);
+}
+
+.inventory-card {
+    height: 100%;
+    background: var(--surface-strong);
+    border: 1px solid var(--line);
+    border-radius: 8px;
+    padding: 18px;
+}
+
+.inventory-card h3 {
+    margin: 0;
+    font-size: 1rem;
+    font-weight: 700;
+}
+
+.inventory-meta {
+    color: var(--muted);
+    font-size: 0.88rem;
+}
+
+.empty-state {
+    border: 1px dashed #b9c7bf;
+    border-radius: 8px;
+    color: var(--muted);
+    padding: 28px;
+    text-align: center;
+}
+
+.btn {
+    border-radius: 6px;
+    font-weight: 600;
+}
+
+@media (max-width: 575.98px) {
+    .panel {
+        padding: 18px;
+    }
+
+    .panel-header {
+        align-items: flex-start;
+        flex-direction: column;
+    }
+
+    .inventory-tools {
+        flex-direction: column;
+        width: 100%;
+    }
+
+    .inventory-tools .btn {
+        width: 100%;
+    }
+}
