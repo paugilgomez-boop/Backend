@@ -1,7 +1,6 @@
-import models.Admin;
 import models.Inventory;
 import models.Item;
-import models.Player;
+import models.Purchase;
 import models.User;
 import org.junit.After;
 import org.junit.Assert;
@@ -28,19 +27,19 @@ public class GameManagerTest {
     }
 
     @Test
-    public void testRegisterPlayerAndAdmin() {
-        Player player = gm.registerPlayer(new Player("P1", "player1", "1234", "player@mail.com", 100, 1));
-        Admin admin = gm.registerAdmin(new Admin("A1", "admin1", "admin", "admin@mail.com", 0, "ALL"));
+    public void testRegisterUsersWithPermissions() {
+        User player = gm.registerUser(new User("P1", "player1", "1234", "player@mail.com", 100, "PLAYER", 1));
+        User admin = gm.registerUser(new User("A1", "admin1", "admin", "admin@mail.com", 0, "ADMIN", 0));
 
         Assert.assertEquals("P1", player.getId());
         Assert.assertEquals("A1", admin.getId());
-        Assert.assertTrue(gm.getUser("P1") instanceof Player);
-        Assert.assertTrue(gm.getUser("A1") instanceof Admin);
+        Assert.assertEquals("PLAYER", gm.getUser("P1").getPermissions());
+        Assert.assertEquals("ADMIN", gm.getUser("A1").getPermissions());
     }
 
     @Test
     public void testLogin() {
-        gm.registerPlayer(new Player("P1", "player1", "1234", "player@mail.com", 100, 1));
+        gm.registerUser(new User("P1", "player1", "1234", "player@mail.com", 100, "PLAYER", 1));
 
         User user = gm.login("player1", "1234");
 
@@ -49,7 +48,7 @@ public class GameManagerTest {
 
     @Test(expected = NoSuchElementException.class)
     public void testLoginWithInvalidCredentials() {
-        gm.registerPlayer(new Player("P1", "player1", "1234", "player@mail.com", 100, 1));
+        gm.registerUser(new User("P1", "player1", "1234", "player@mail.com", 100, "PLAYER", 1));
 
         gm.login("player1", "bad-password");
     }
@@ -73,36 +72,51 @@ public class GameManagerTest {
 
     @Test
     public void testBuyItemAddsInventoryAndDiscountsBalance() {
-        gm.registerPlayer(new Player("P1", "player1", "1234", "player@mail.com", 100, 1));
+        gm.registerUser(new User("P1", "player1", "1234", "player@mail.com", 100, "PLAYER", 1));
         gm.addItem(new Item("I1", "Potion", "Small heal", "CONSUMABLE", 10));
 
-        Inventory inventory = gm.buyItem("P1", "I1", 3);
+        Purchase purchase = gm.buyItem("P1", "I1", 3);
+        List<Inventory> inventory = gm.getInventoryByUser("P1");
 
-        Assert.assertEquals("P1", inventory.getPlayerId());
-        Assert.assertEquals("I1", inventory.getItemId());
-        Assert.assertEquals(3, inventory.getQuantity());
+        Assert.assertEquals("P1", purchase.getUserId());
+        Assert.assertEquals("I1", purchase.getItemId());
+        Assert.assertEquals(30, purchase.getTotalPrice(), 0.001);
+        Assert.assertEquals(1, inventory.size());
+        Assert.assertEquals("P1", inventory.get(0).getUserId());
+        Assert.assertEquals("I1", inventory.get(0).getItemId());
+        Assert.assertEquals(3, inventory.get(0).getQuantity());
         Assert.assertEquals(70, gm.getUser("P1").getSaldo(), 0.001);
     }
 
     @Test
     public void testBuySameItemIncreasesQuantity() {
-        gm.registerPlayer(new Player("P1", "player1", "1234", "player@mail.com", 100, 1));
+        gm.registerUser(new User("P1", "player1", "1234", "player@mail.com", 100, "PLAYER", 1));
         gm.addItem(new Item("I1", "Potion", "Small heal", "CONSUMABLE", 10));
 
         gm.buyItem("P1", "I1", 2);
         gm.buyItem("P1", "I1", 3);
 
-        List<Inventory> inventory = gm.getInventoryByPlayer("P1");
+        List<Inventory> inventory = gm.getInventoryByUser("P1");
+        List<Purchase> purchases = gm.getPurchasesByUser("P1");
 
         Assert.assertEquals(1, inventory.size());
         Assert.assertEquals(5, inventory.get(0).getQuantity());
+        Assert.assertEquals(2, purchases.size());
         Assert.assertEquals(50, gm.getUser("P1").getSaldo(), 0.001);
     }
 
     @Test(expected = IllegalStateException.class)
     public void testBuyItemWithoutEnoughBalance() {
-        gm.registerPlayer(new Player("P1", "player1", "1234", "player@mail.com", 5, 1));
+        gm.registerUser(new User("P1", "player1", "1234", "player@mail.com", 5, "PLAYER", 1));
         gm.addItem(new Item("I1", "Potion", "Small heal", "CONSUMABLE", 10));
+
+        gm.buyItem("P1", "I1", 1);
+    }
+
+    @Test(expected = IllegalStateException.class)
+    public void testBuyUnavailableItem() {
+        gm.registerUser(new User("P1", "player1", "1234", "player@mail.com", 100, "PLAYER", 1));
+        gm.addItem(new Item("I1", "Potion", "Small heal", "CONSUMABLE", 10, false, "potion_small"));
 
         gm.buyItem("P1", "I1", 1);
     }

@@ -1,17 +1,18 @@
 package repositories;
 
-import models.Admin;
 import models.Inventory;
 import models.Item;
-import models.Player;
+import models.Purchase;
 import models.User;
 import org.apache.log4j.Logger;
 
+import java.time.Instant;
 import java.util.ArrayList;
 import java.util.HashMap;
 import java.util.Iterator;
 import java.util.List;
 import java.util.NoSuchElementException;
+import java.util.UUID;
 
 public class GameManagerImpl implements GameManager {
 
@@ -22,12 +23,14 @@ public class GameManagerImpl implements GameManager {
     private HashMap<String, User> usersByUsername;
     private HashMap<String, Item> items;
     private HashMap<String, List<Inventory>> inventories;
+    private HashMap<String, List<Purchase>> purchases;
 
     private GameManagerImpl() {
         users = new HashMap<>();
         usersByUsername = new HashMap<>();
         items = new HashMap<>();
         inventories = new HashMap<>();
+        purchases = new HashMap<>();
     }
 
     public static GameManagerImpl getInstance() {
@@ -47,30 +50,21 @@ public class GameManagerImpl implements GameManager {
         usersByUsername.clear();
         items.clear();
         inventories.clear();
+        purchases.clear();
         logger.info("clear completed");
     }
 
     @Override
-    public Player registerPlayer(Player player) {
-        validateUser(player);
-        if (users.containsKey(player.getId()) || usersByUsername.containsKey(player.getUsername())) {
+    public User registerUser(User user) {
+        validateUser(user);
+        if (users.containsKey(user.getId()) || usersByUsername.containsKey(user.getUsername())) {
             throw new IllegalArgumentException("Ya existe un usuario con ese id o username");
         }
-        users.put(player.getId(), player);
-        usersByUsername.put(player.getUsername(), player);
-        inventories.put(player.getId(), new ArrayList<Inventory>());
-        return player;
-    }
-
-    @Override
-    public Admin registerAdmin(Admin admin) {
-        validateUser(admin);
-        if (users.containsKey(admin.getId()) || usersByUsername.containsKey(admin.getUsername())) {
-            throw new IllegalArgumentException("Ya existe un usuario con ese id o username");
-        }
-        users.put(admin.getId(), admin);
-        usersByUsername.put(admin.getUsername(), admin);
-        return admin;
+        users.put(user.getId(), user);
+        usersByUsername.put(user.getUsername(), user);
+        inventories.put(user.getId(), new ArrayList<Inventory>());
+        purchases.put(user.getId(), new ArrayList<Purchase>());
+        return user;
     }
 
     @Override
@@ -102,7 +96,6 @@ public class GameManagerImpl implements GameManager {
         }
         validateItem(item);
         items.put(itemId, item);
-        updateInventoryItemType(itemId, item.getType());
         return item;
     }
 
@@ -130,50 +123,71 @@ public class GameManagerImpl implements GameManager {
     }
 
     @Override
-    public Inventory buyItem(String playerId, String itemId, int quantity) {
+    public Purchase buyItem(String userId, String itemId, int quantity) {
         if (quantity <= 0) {
             throw new IllegalArgumentException("La cantidad debe ser mayor que 0");
         }
-        User user = users.get(playerId);
-        if (!(user instanceof Player)) {
-            throw new NoSuchElementException("No existe ningun player con ese id");
+        User user = users.get(userId);
+        if (user == null) {
+            throw new NoSuchElementException("No existe ningun usuario con ese id");
         }
         Item item = getItem(itemId);
+        if (!item.isAvailable()) {
+            throw new IllegalStateException("Item no disponible");
+        }
         double totalPrice = item.getPrice() * quantity;
         if (user.getSaldo() < totalPrice) {
             throw new IllegalStateException("Saldo insuficiente");
         }
 
         user.setSaldo(user.getSaldo() - totalPrice);
-        List<Inventory> playerInventory = inventories.get(playerId);
-        if (playerInventory == null) {
-            playerInventory = new ArrayList<>();
-            inventories.put(playerId, playerInventory);
+        List<Inventory> userInventory = inventories.get(userId);
+        if (userInventory == null) {
+            userInventory = new ArrayList<>();
+            inventories.put(userId, userInventory);
         }
 
-        for (Inventory inventory : playerInventory) {
+        for (Inventory inventory : userInventory) {
             if (inventory.getItemId().equals(itemId)) {
                 inventory.setQuantity(inventory.getQuantity() + quantity);
-                return inventory;
+                Purchase purchase = createPurchase(userId, itemId, quantity, totalPrice);
+                addPurchase(userId, purchase);
+                return purchase;
             }
         }
 
-        Inventory inventory = new Inventory(playerId, itemId, item.getType(), quantity);
-        playerInventory.add(inventory);
-        return inventory;
+        Inventory inventory = new Inventory(userId, itemId, quantity);
+        userInventory.add(inventory);
+
+        Purchase purchase = createPurchase(userId, itemId, quantity, totalPrice);
+        addPurchase(userId, purchase);
+        return purchase;
     }
 
     @Override
-    public List<Inventory> getInventoryByPlayer(String playerId) {
-        User user = users.get(playerId);
-        if (!(user instanceof Player)) {
-            throw new NoSuchElementException("No existe ningun player con ese id");
+    public List<Inventory> getInventoryByUser(String userId) {
+        User user = users.get(userId);
+        if (user == null) {
+            throw new NoSuchElementException("No existe ningun usuario con ese id");
         }
-        List<Inventory> playerInventory = inventories.get(playerId);
-        if (playerInventory == null) {
+        List<Inventory> userInventory = inventories.get(userId);
+        if (userInventory == null) {
             return new ArrayList<>();
         }
-        return new ArrayList<>(playerInventory);
+        return new ArrayList<>(userInventory);
+    }
+
+    @Override
+    public List<Purchase> getPurchasesByUser(String userId) {
+        User user = users.get(userId);
+        if (user == null) {
+            throw new NoSuchElementException("No existe ningun usuario con ese id");
+        }
+        List<Purchase> userPurchases = purchases.get(userId);
+        if (userPurchases == null) {
+            return new ArrayList<>();
+        }
+        return new ArrayList<>(userPurchases);
     }
 
     @Override
@@ -186,7 +200,7 @@ public class GameManagerImpl implements GameManager {
     }
 
     private void validateUser(User user) {
-        if (user == null || isBlank(user.getId()) || isBlank(user.getUsername()) || isBlank(user.getPassword())) {
+        if (user == null || isBlank(user.getId()) || isBlank(user.getUsername()) || isBlank(user.getPassword()) || isBlank(user.getPermissions())) {
             throw new IllegalArgumentException("Datos de usuario invalidos");
         }
     }
@@ -201,16 +215,6 @@ public class GameManagerImpl implements GameManager {
         return value == null || value.trim().isEmpty();
     }
 
-    private void updateInventoryItemType(String itemId, String type) {
-        for (List<Inventory> playerInventory : inventories.values()) {
-            for (Inventory inventory : playerInventory) {
-                if (inventory.getItemId().equals(itemId)) {
-                    inventory.setType(type);
-                }
-            }
-        }
-    }
-
     private void removeItemFromInventories(String itemId) {
         for (List<Inventory> playerInventory : inventories.values()) {
             Iterator<Inventory> iterator = playerInventory.iterator();
@@ -220,5 +224,18 @@ public class GameManagerImpl implements GameManager {
                 }
             }
         }
+    }
+
+    private Purchase createPurchase(String userId, String itemId, int quantity, double totalPrice) {
+        return new Purchase(UUID.randomUUID().toString(), userId, itemId, quantity, totalPrice, Instant.now().toString());
+    }
+
+    private void addPurchase(String userId, Purchase purchase) {
+        List<Purchase> userPurchases = purchases.get(userId);
+        if (userPurchases == null) {
+            userPurchases = new ArrayList<>();
+            purchases.put(userId, userPurchases);
+        }
+        userPurchases.add(purchase);
     }
 }

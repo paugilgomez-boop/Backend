@@ -1,0 +1,101 @@
+@startuml TowerDefenceDomain
+' Diagrama UML de dominio para TowerDefence.
+' No se incluyen Managers, Services ni Requests porque pertenecen a la capa de implementacion/API.
+' Este diagrama representa solo las entidades principales del juego y sus relaciones.
+
+skinparam classAttributeIconSize 0
+skinparam shadowing false
+skinparam class {
+    BackgroundColor #FCE2BF
+    BorderColor #4A4A4A
+    ArrowColor #4A4A4A
+}
+
+title TowerDefence - Domain Model
+
+class User {
+    - id : String
+    - username : String
+    - password : String
+    - email : String
+    - saldo : double
+    - permissions : String
+    - level : int
+}
+
+note right of User
+  Represents any application user.
+  The permissions field defines what the user can do:
+  PLAYER, ADMIN, or any future permission profile.
+end note
+
+class Item {
+    - id : String
+    - name : String
+    - description : String
+    - type : String
+    - price : double
+    - available : boolean
+    - assetName : String
+}
+
+note right of Item
+  Represents a shop object.
+  In Unity, assetName can map this item
+  to a prefab, skin, tower or upgrade.
+end note
+
+class Inventory {
+    - userId : String
+    - itemId : String
+    - quantity : int
+}
+
+note left of Inventory
+  Represents the current state of ownership.
+  Example: user P1 owns 3 units of item I1.
+  It does not duplicate item data such as type or price.
+end note
+
+class Purchase {
+    - id : String
+    - userId : String
+    - itemId : String
+    - quantity : int
+    - totalPrice : double
+    - date : String
+}
+
+note right of Purchase
+  Represents a purchase transaction.
+  It is a historical record: what was bought,
+  by whom, how many units, when, and total cost.
+end note
+
+' COMPOSITION:
+' Inventory entries belong to a User.
+' If the user disappears from the system, these inventory entries stop making sense.
+User "1" *-- "0..*" Inventory : owns
+
+' ASSOCIATION:
+' Inventory references Item, but Item is not part of Inventory.
+' The item catalog can exist even if no user owns that item.
+Inventory "0..*" --> "1" Item : item
+
+' COMPOSITION:
+' Purchases are part of a user's history.
+' They store what the user bought and when.
+User "1" *-- "0..*" Purchase : purchase history
+
+' ASSOCIATION:
+' Purchase references Item to know what was bought.
+' Item still belongs to the shop catalog, not to the purchase itself.
+Purchase "0..*" --> "1" Item : bought item
+
+legend right
+  <b>Legend</b>
+  *-- black diamond: composition / strong ownership
+  --> association: reference between domain objects
+endlegend
+
+@enduml

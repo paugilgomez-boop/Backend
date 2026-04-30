@@ -6,6 +6,8 @@ public class ItemRequest {
     private String description;
     private String type;
     private double price;
+    private boolean available = true;
+    private String assetName;
 
     public ItemRequest() {
     }
@@ -24,4 +26,10 @@ public class ItemRequest {
 
     public double getPrice() { return price; }
     public void setPrice(double price) { this.price = price; }
+
+    public boolean isAvailable() { return available; }
+    public void setAvailable(boolean available) { this.available = available; }
+
+    public String getAssetName() { return assetName; }
+    public void setAssetName(String assetName) { this.assetName = assetName; }
 }

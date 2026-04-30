@@ -1,0 +1,97 @@
+@startuml TowerDefenceDomainPrevious
+' Diagrama UML de dominio anterior.
+' Esta version representa el modelo antes de simplificar User/Admin/Player.
+' No incluye Managers, Services ni Requests porque no forman parte del dominio teorico.
+
+skinparam classAttributeIconSize 0
+skinparam shadowing false
+skinparam class {
+    BackgroundColor #FCE2BF
+    BorderColor #4A4A4A
+    ArrowColor #4A4A4A
+}
+
+title TowerDefence - Previous Domain Model
+
+class User {
+    - id : String
+    - username : String
+    - password : String
+    - email : String
+    - saldo : double
+}
+
+note right of User
+  Base class for every system user.
+  Player and Admin inherited the common
+  user data from this class.
+end note
+
+class Player {
+    - level : int
+}
+
+note left of Player
+  Represents a game player.
+  A player owns items through Inventory.
+end note
+
+class Admin {
+    - permissions : String
+}
+
+note right of Admin
+  Represents an administrator user.
+  In the previous model this class only
+  added permissions.
+end note
+
+class Item {
+    - id : String
+    - name : String
+    - description : String
+    - type : String
+    - price : double
+}
+
+note right of Item
+  Represents a shop object that can be bought.
+  Examples: tower, upgrade, skin or boost.
+end note
+
+class Inventory {
+    - playerId : String
+    - itemId : String
+    - type : String
+    - quantity : int
+}
+
+note left of Inventory
+  Represents an inventory entry.
+  It connects a Player with an Item and
+  stores how many units the player owns.
+end note
+
+' INHERITANCE:
+' Player and Admin are specialized users.
+User <|-- Player
+User <|-- Admin
+
+' COMPOSITION:
+' Inventory entries belong to a Player.
+' If the player disappears, these entries stop making sense.
+Player "1" *-- "0..*" Inventory : owns
+
+' ASSOCIATION:
+' Inventory references Item from the shop catalog.
+' Item can exist even if nobody owns it.
+Inventory "0..*" --> "1" Item : item
+
+legend right
+  <b>Legend</b>
+  <|-- inheritance
+  *-- black diamond: composition / strong ownership
+  --> association: reference
+endlegend
+
+@enduml

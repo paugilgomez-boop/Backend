@@ -6,16 +6,20 @@ public class User {
     private String password;
     private String email;
     private double saldo;
+    private String permissions;
+    private int level;
 
     public User() {
     }
 
-    public User(String id, String username, String password, String email, double saldo) {
+    public User(String id, String username, String password, String email, double saldo, String permissions, int level) {
         this.id = id;
         this.username = username;
         this.password = password;
         this.email = email;
         this.saldo = saldo;
+        this.permissions = permissions;
+        this.level = level;
     }
 
     public String getId() {
@@ -56,5 +60,21 @@ public class User {
 
     public void setSaldo(double saldo) {
         this.saldo = saldo;
+    }
+
+    public String getPermissions() {
+        return permissions;
+    }
+
+    public void setPermissions(String permissions) {
+        this.permissions = permissions;
+    }
+
+    public int getLevel() {
+        return level;
+    }
+
+    public void setLevel(int level) {
+        this.level = level;
     }
 }

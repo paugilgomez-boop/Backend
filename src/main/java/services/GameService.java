@@ -4,10 +4,9 @@ import io.swagger.annotations.Api;
 import io.swagger.annotations.ApiOperation;
 import io.swagger.annotations.ApiResponse;
 import io.swagger.annotations.ApiResponses;
-import models.Admin;
 import models.Inventory;
 import models.Item;
-import models.Player;
+import models.Purchase;
 import models.User;
 import repositories.GameManager;
 import repositories.GameManagerImpl;
@@ -54,15 +53,9 @@ public class GameService {
             return Response.status(400).entity("Datos de usuario invalidos").build();
         }
         try {
-            if ("ADMIN".equalsIgnoreCase(request.getRole())) {
-                Admin admin = new Admin(request.getId(), request.getUsername(), request.getPassword(),
-                        request.getEmail(), request.getSaldo(), request.getPermissions());
-                return Response.status(201).entity(gm.registerAdmin(admin)).build();
-            }
-
-            Player player = new Player(request.getId(), request.getUsername(), request.getPassword(),
-                    request.getEmail(), request.getSaldo(), request.getLevel());
-            return Response.status(201).entity(gm.registerPlayer(player)).build();
+            User user = new User(request.getId(), request.getUsername(), request.getPassword(),
+                    request.getEmail(), request.getSaldo(), resolvePermissions(request), request.getLevel());
+            return Response.status(201).entity(gm.registerUser(user)).build();
         } catch (IllegalArgumentException e) {
             return Response.status(400).entity(e.getMessage()).build();
         }
@@ -174,8 +167,8 @@ public class GameService {
             return Response.status(400).entity("Datos de compra invalidos").build();
         }
         try {
-            Inventory inventory = gm.buyItem(playerId, request.getItemId(), request.getQuantity());
-            return Response.status(201).entity(inventory).build();
+            Purchase purchase = gm.buyItem(playerId, request.getItemId(), request.getQuantity());
+            return Response.status(201).entity(purchase).build();
         } catch (NoSuchElementException e) {
             return Response.status(404).entity(e.getMessage()).build();
         } catch (IllegalStateException e) {
@@ -193,10 +186,28 @@ public class GameService {
             @ApiResponse(code = 200, message = "Consulta correcta", response = Inventory.class, responseContainer = "List"),
             @ApiResponse(code = 404, message = "Player no encontrado")
     })
-    public Response getInventoryByPlayer(@PathParam("playerId") String playerId) {
+    public Response getInventoryByUser(@PathParam("playerId") String playerId) {
         try {
-            List<Inventory> inventory = gm.getInventoryByPlayer(playerId);
+            List<Inventory> inventory = gm.getInventoryByUser(playerId);
             GenericEntity<List<Inventory>> entity = new GenericEntity<List<Inventory>>(inventory) {};
+            return Response.status(200).entity(entity).build();
+        } catch (NoSuchElementException e) {
+            return Response.status(404).entity(e.getMessage()).build();
+        }
+    }
+
+    @GET
+    @Path("/players/{playerId}/purchases")
+    @Produces(MediaType.APPLICATION_JSON)
+    @ApiOperation(value = "Ver compras de un usuario")
+    @ApiResponses(value = {
+            @ApiResponse(code = 200, message = "Consulta correcta", response = Purchase.class, responseContainer = "List"),
+            @ApiResponse(code = 404, message = "Usuario no encontrado")
+    })
+    public Response getPurchasesByPlayer(@PathParam("playerId") String playerId) {
+        try {
+            List<Purchase> purchases = gm.getPurchasesByUser(playerId);
+            GenericEntity<List<Purchase>> entity = new GenericEntity<List<Purchase>>(purchases) {};
             return Response.status(200).entity(entity).build();
         } catch (NoSuchElementException e) {
             return Response.status(404).entity(e.getMessage()).build();
@@ -207,6 +218,17 @@ public class GameService {
         if (request == null) {
             throw new IllegalArgumentException("Datos de item invalidos");
         }
-        return new Item(request.getId(), request.getName(), request.getDescription(), request.getType(), request.getPrice());
+        return new Item(request.getId(), request.getName(), request.getDescription(),
+                request.getType(), request.getPrice(), request.isAvailable(), request.getAssetName());
+    }
+
+    private String resolvePermissions(RegisterRequest request) {
+        if (request.getPermissions() != null && !request.getPermissions().trim().isEmpty()) {
+            return request.getPermissions();
+        }
+        if (request.getRole() != null && !request.getRole().trim().isEmpty()) {
+            return request.getRole();
+        }
+        return "PLAYER";
     }
 }
