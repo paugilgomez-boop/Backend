@@ -1,5 +1,11 @@
 package models;
 
+import io.swagger.annotations.ApiModel;
+import io.swagger.annotations.ApiModelProperty;
+import javax.xml.bind.annotation.XmlRootElement;
+
+@XmlRootElement
+@ApiModel(value = "Item", description = "Modelo de Item en el Catálogo")
 public class Item {
     private String id;
     private String name;
@@ -26,6 +32,7 @@ public class Item {
         this.assetName = assetName;
     }
 
+    @ApiModelProperty(value = "Identificador único del item")
     public String getId() {
         return id;
     }
@@ -34,6 +41,7 @@ public class Item {
         this.id = id;
     }
 
+    @ApiModelProperty(value = "Nombre del item")
     public String getName() {
         return name;
     }
@@ -42,6 +50,7 @@ public class Item {
         this.name = name;
     }
 
+    @ApiModelProperty(value = "Descripción del item")
     public String getDescription() {
         return description;
     }
@@ -50,6 +59,7 @@ public class Item {
         this.description = description;
     }
 
+    @ApiModelProperty(value = "Tipo de item")
     public String getType() {
         return type;
     }
@@ -58,6 +68,7 @@ public class Item {
         this.type = type;
     }
 
+    @ApiModelProperty(value = "Precio del item")
     public double getPrice() {
         return price;
     }
@@ -66,6 +77,7 @@ public class Item {
         this.price = price;
     }
 
+    @ApiModelProperty(value = "Disponibilidad del item")
     public boolean isAvailable() {
         return available;
     }
@@ -74,6 +86,7 @@ public class Item {
         this.available = available;
     }
 
+    @ApiModelProperty(value = "Nombre del recurso/asset del item")
     public String getAssetName() {
         return assetName;
     }

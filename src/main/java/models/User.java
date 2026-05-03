@@ -1,5 +1,11 @@
 package models;
 
+import io.swagger.annotations.ApiModel;
+import io.swagger.annotations.ApiModelProperty;
+import javax.xml.bind.annotation.XmlRootElement;
+
+@XmlRootElement
+@ApiModel(value = "User", description = "Modelo de Usuario del Sistema")
 public class User {
     private String id;
     private String username;
@@ -22,6 +28,7 @@ public class User {
         this.level = level;
     }
 
+    @ApiModelProperty(value = "Identificador único del usuario")
     public String getId() {
         return id;
     }
@@ -30,6 +37,7 @@ public class User {
         this.id = id;
     }
 
+    @ApiModelProperty(value = "Nombre de usuario")
     public String getUsername() {
         return username;
     }
@@ -38,6 +46,7 @@ public class User {
         this.username = username;
     }
 
+    @ApiModelProperty(value = "Contraseña del usuario")
     public String getPassword() {
         return password;
     }
@@ -46,6 +55,7 @@ public class User {
         this.password = password;
     }
 
+    @ApiModelProperty(value = "Correo electrónico")
     public String getEmail() {
         return email;
     }
@@ -54,6 +64,7 @@ public class User {
         this.email = email;
     }
 
+    @ApiModelProperty(value = "Saldo del usuario")
     public double getSaldo() {
         return saldo;
     }
@@ -62,6 +73,7 @@ public class User {
         this.saldo = saldo;
     }
 
+    @ApiModelProperty(value = "Permisos del usuario (PLAYER o ADMIN)")
     public String getPermissions() {
         return permissions;
     }
@@ -70,6 +82,7 @@ public class User {
         this.permissions = permissions;
     }
 
+    @ApiModelProperty(value = "Nivel del usuario")
     public int getLevel() {
         return level;
     }

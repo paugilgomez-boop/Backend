@@ -1,5 +1,11 @@
 package models;
 
+import io.swagger.annotations.ApiModel;
+import io.swagger.annotations.ApiModelProperty;
+import javax.xml.bind.annotation.XmlRootElement;
+
+@XmlRootElement
+@ApiModel(value = "Purchase", description = "Registro de Compra")
 public class Purchase {
     private String id;
     private String userId;
@@ -20,6 +26,7 @@ public class Purchase {
         this.date = date;
     }
 
+    @ApiModelProperty(value = "ID único de la compra")
     public String getId() {
         return id;
     }
@@ -28,6 +35,7 @@ public class Purchase {
         this.id = id;
     }
 
+    @ApiModelProperty(value = "ID del usuario que realizó la compra")
     public String getUserId() {
         return userId;
     }
@@ -36,6 +44,7 @@ public class Purchase {
         this.userId = userId;
     }
 
+    @ApiModelProperty(value = "ID del item comprado")
     public String getItemId() {
         return itemId;
     }
@@ -44,6 +53,7 @@ public class Purchase {
         this.itemId = itemId;
     }
 
+    @ApiModelProperty(value = "Cantidad de items comprados")
     public int getQuantity() {
         return quantity;
     }
@@ -52,6 +62,7 @@ public class Purchase {
         this.quantity = quantity;
     }
 
+    @ApiModelProperty(value = "Precio total de la compra")
     public double getTotalPrice() {
         return totalPrice;
     }
@@ -60,6 +71,7 @@ public class Purchase {
         this.totalPrice = totalPrice;
     }
 
+    @ApiModelProperty(value = "Fecha de la compra")
     public String getDate() {
         return date;
     }
