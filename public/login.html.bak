@@ -1,0 +1,255 @@
+<!DOCTYPE html>
+<!-- Unified Brand Purple Registration integrated with existing logic -->
+<html class="dark" lang="en">
+<head>
+    <meta charset="utf-8"/>
+    <meta content="width=device-width, initial-scale=1.0" name="viewport"/>
+    <title>Error404 - Login</title>
+    <link href="https://fonts.googleapis.com" rel="preconnect"/>
+    <link crossorigin="" href="https://fonts.gstatic.com" rel="preconnect"/>
+    <link href="https://fonts.googleapis.com/css2?family=Space+Grotesk:wght@300;400;500;600;700&amp;display=swap" rel="stylesheet"/>
+    <link href="https://fonts.googleapis.com/css2?family=Material+Symbols+Outlined:wght,FILL@100..700,0..1&amp;display=swap" rel="stylesheet"/>
+    
+    <!-- Tailwind CSS -->
+    <script src="https://cdn.tailwindcss.com?plugins=forms,container-queries"></script>
+    <script id="tailwind-config">
+        tailwind.config = {
+            darkMode: "class",
+            theme: {
+                extend: {
+                    colors: {
+                        "neon-cyan": "#4deeea",
+                        "neon-purple": "#7C83FD",
+                        "primary": "#4deeea",
+                        "background-dark": "#020408",
+                        "card-bg": "rgba(10, 12, 20, 0.4)",
+                    },
+                    fontFamily: {
+                        "display": ["Space Grotesk", "sans-serif"]
+                    },
+                    boxShadow: {
+                        'glow': '0 0 15px rgba(77, 238, 234, 0.6)',
+                        'glow-purple': '0 0 30px rgba(124, 131, 253, 0.5)',
+                        'glow-strong': '0 0 40px rgba(77, 238, 234, 0.5)',
+                        'neon-btn': '0 0 25px rgba(77, 238, 234, 0.3)',
+                        'input-focus': '0 0 0 1px #4deeea, 0 0 20px rgba(77, 238, 234, 0.2)',
+                    },
+                    backgroundImage: {
+                        'tech-grid': "linear-gradient(to right, rgba(124, 131, 253, 0.1) 1px, transparent 1px), linear-gradient(to bottom, rgba(124, 131, 253, 0.1) 1px, transparent 1px)",
+                    }
+                },
+            },
+        }
+    </script>
+
+    <!-- Custom Styles -->
+    <style>
+       body {
+            background-color: #020617;
+            background-image: 
+                radial-gradient(circle at 10% 20%, rgba(139, 92, 246, 0.15), transparent 40%),
+                radial-gradient(circle at 90% 80%, rgba(139, 92, 246, 0.1), transparent 40%),
+                radial-gradient(circle at 50% 50%, rgba(139, 92, 246, 0.05), transparent 60%);
+            background-attachment: fixed;
+            min-height: 100vh;
+            font-family: 'Noto Sans', sans-serif;
+        }
+        .glass-panel {
+            background: rgba(8, 10, 20, 0.45);
+            backdrop-filter: blur(24px);
+            -webkit-backdrop-filter: blur(24px);
+            border: 1px solid rgba(124, 131, 253, 0.15);
+            box-shadow: 
+                0 40px 60px -20px rgba(0, 0, 0, 0.8),
+                inset 0 0 0 1px rgba(124, 131, 253, 0.1);
+        }
+        .tech-grid-bg {
+            background-size: 50px 50px;
+            mask-image: radial-gradient(circle at center, black 30%, transparent 80%);
+            -webkit-mask-image: radial-gradient(circle at center, black 30%, transparent 80%);
+        }
+        input:-webkit-autofill,
+        input:-webkit-autofill:hover, 
+        input:-webkit-autofill:focus, 
+        input:-webkit-autofill:active{
+            -webkit-box-shadow: 0 0 0 30px #050a14 inset !important;
+            -webkit-text-fill-color: #e2e8f0 !important;
+            transition: background-color 5000s ease-in-out 0s;
+        }
+        .error-toast {
+            animation: slideIn 0.3s cubic-bezier(0.16, 1, 0.3, 1);
+        }
+        @keyframes slideIn {
+            from { transform: translateY(-100%); opacity: 0; }
+            to { transform: translateY(0); opacity: 1; }
+        }
+    </style>
+
+    <!-- jQuery & Logic -->
+    <script src="https://ajax.googleapis.com/ajax/libs/jquery/3.7.1/jquery.min.js"></script>
+    <script>
+        $(document).ready(function(){
+            // Check if already logged in
+            const loggedInUser = localStorage.getItem("loggedInUser");
+            if (loggedInUser) {
+                window.location.href = "shop.html";
+                return;
+            }
+
+            // Password Visibility Toggle
+            $("#toggle-password").click(function(){
+                const input = $("input[name='password']");
+                const icon = $(this).find("span");
+                if (input.attr("type") === "password") {
+                    input.attr("type", "text");
+                    icon.text("visibility");
+                } else {
+                    input.attr("type", "password");
+                    icon.text("visibility_off");
+                }
+            });
+
+            // Login Handler
+            $("#login-btn").click(function(e){
+                e.preventDefault();
+
+                const username = $("input[name='username']").val();
+                const password = $("input[name='password']").val();
+
+                if (!username || !password) {
+                    mostrarError("Por favor, completa todos los campos.");
+                    return;
+                }
+
+                // Show loading state
+                const btn = $(this);
+                const originalText = btn.html();
+                btn.prop('disabled', true).addClass('opacity-75 cursor-not-allowed');
+
+                const url = "/dsaApp/game/users/login";
+
+                fetch(url, {
+                    method: "POST",
+                    headers: {
+                        "Content-Type": "application/json"
+                    },
+                    body: JSON.stringify({
+                        "nombre": username,
+                        "password": password
+                    })
+                })
+                .then(response => {
+                    if (response.ok) {
+                        return response.json();
+                    } else {
+                        throw new Error("Usuario o contraseña incorrectos");
+                    }
+                })
+                .then(data => {
+                    localStorage.setItem("loggedInUser", data.username);
+                    window.location.href = "shop.html";
+                })
+                .catch(error => {
+                    mostrarError(error.message);
+                    btn.prop('disabled', false).removeClass('opacity-75 cursor-not-allowed');
+                });
+            });
+        });
+
+        // Custom Toast for Error Display
+        function mostrarError(mensaje) {
+            // Remove existing toast if any
+            $("#toast-error").remove();
+            
+            const toastHtml = `
+                <div id="toast-error" class="error-toast fixed top-5 right-5 z-50 flex items-center p-4 mb-4 text-red-200 border border-red-500/30 rounded-lg shadow-lg bg-black/80 backdrop-blur-md" role="alert">
+                    <div class="inline-flex items-center justify-center flex-shrink-0 w-8 h-8 text-red-500 bg-red-900/30 rounded-lg">
+                        <span class="material-symbols-outlined text-sm">error</span>
+                    </div>
+                    <div class="ml-3 text-sm font-normal">${mensaje}</div>
+                    <button type="button" class="ml-auto -mx-1.5 -my-1.5 text-red-200 hover:text-white rounded-lg focus:ring-2 focus:ring-red-400 p-1.5 hover:bg-red-900/50 inline-flex items-center justify-center h-8 w-8" onclick="$(this).parent().remove()">
+                        <span class="sr-only">Close</span>
+                        <span class="material-symbols-outlined text-sm">close</span>
+                    </button>
+                </div>
+            `;
+            
+            $("body").append(toastHtml);
+            
+            // Auto hide after 5 seconds
+            setTimeout(() => {
+                $("#toast-error").fadeOut(300, function() { $(this).remove(); });
+            }, 5000);
+        }
+    </script>
+</head>
+
+<body class="bg-background-dark min-h-screen flex flex-col relative overflow-hidden text-white font-display selection:bg-primary selection:text-black">
+    <!-- Background Elements -->
+    <div class="fixed inset-0 z-0 bg-mesh"></div>
+    <div class="fixed inset-0 z-0 tech-dots opacity-20 pointer-events-none"></div>
+    <div class="fixed inset-0 z-0 bg-[length:60px_60px] bg-grid-pattern opacity-[0.15] pointer-events-none"></div>
+    <div class="fixed top-[-10%] left-[-10%] w-[900px] h-[900px] bg-neon-purple/20 rounded-full blur-[150px] pointer-events-none opacity-50"></div>
+    <div class="fixed bottom-[-10%] right-[-10%] w-[800px] h-[800px] bg-neon-purple/15 rounded-full blur-[120px] pointer-events-none opacity-40"></div>
+
+    <div class="relative z-10 flex min-h-screen items-center justify-center p-4">
+        <div class="w-full max-w-[500px] glass-panel rounded-2xl overflow-hidden relative group/card border-t border-white/10">
+            <div class="absolute inset-x-0 top-0 h-[2px] bg-primary shadow-[0_0_15px_#4DEEEA]"></div>
+            <div class="absolute inset-x-0 bottom-0 h-[1px] bg-primary/30"></div>
+            
+            <div class="p-8 sm:p-10 flex flex-col gap-6 relative z-10 w-full">
+                <div class="text-center mb-1">
+                    <img src="logo.png" alt="Logo" class="h-20 mx-auto mb-4 drop-shadow-[0_0_10px_rgba(255,255,255,0.3)] hover:scale-105 transition-transform duration-300">
+                    <h1 class="text-3xl font-bold tracking-tight text-white mb-2 drop-shadow-[0_0_10px_rgba(255,255,255,0.2)]">Login In</h1>
+                </div>
+
+                <form class="flex flex-col gap-5">
+                    <div class="flex flex-col gap-1.5 group/input">
+                        <label class="text-[11px] uppercase tracking-widest text-primary font-bold ml-1 drop-shadow-[0_0_5px_rgba(77,238,234,0.6)]">Username</label>
+                        <div class="glow-focus transition-all duration-300 relative rounded-lg border border-white/10 bg-black/60 overflow-hidden group-hover/input:border-primary/50">
+                            <input class="w-full bg-transparent border-none text-white placeholder-slate-600 focus:ring-0 h-11 px-4 text-[15px] font-medium tracking-wide" 
+                                   placeholder="@johndoe" 
+                                   type="text" 
+                                   name="username" 
+                                   required />
+                            <div class="absolute right-3 top-2.5 text-slate-600 pointer-events-none group-focus-within/input:text-primary transition-colors drop-shadow-[0_0_8px_rgba(77,238,234,0.5)]">
+                                <span class="material-symbols-outlined text-[20px]">alternate_email</span>
+                            </div>
+                        </div>
+                    </div>
+
+                    <div class="flex flex-col gap-1.5 group/input">
+                        <label class="text-[11px] uppercase tracking-widest text-primary font-bold ml-1 drop-shadow-[0_0_5px_rgba(77,238,234,0.6)]">Password</label>
+                        <div class="glow-focus transition-all duration-300 relative rounded-lg border border-white/10 bg-black/60 overflow-hidden flex items-center group-hover/input:border-primary/50">
+                            <input class="flex-1 bg-transparent border-none text-white placeholder-slate-600 focus:ring-0 h-11 px-4 text-[15px] font-medium tracking-wide" 
+                                   placeholder="••••••••" 
+                                   type="password" 
+                                   name="password" 
+                                   required />
+                            <button id="toggle-password" class="px-3 text-slate-600 hover:text-primary transition-colors focus:outline-none hover:drop-shadow-[0_0_8px_rgba(77,238,234,0.5)]" type="button">
+                                <span class="material-symbols-outlined text-[20px]">visibility_off</span>
+                            </button>
+                        </div>
+                    </div>
+
+                    <div class="mt-6 flex flex-col gap-4">
+                        <button id="login-btn" class="group relative w-full h-12 overflow-hidden rounded-lg bg-primary text-slate-900 font-bold tracking-wide shadow-[0_0_20px_rgba(77,238,234,0.4)] transition-all active:scale-[0.98] hover:bg-primary/90 hover:shadow-[0_0_35px_rgba(77,238,234,0.6)] border border-primary/20">
+                            <span class="relative flex items-center justify-center gap-2 font-extrabold uppercase tracking-wider text-sm drop-shadow-sm">
+                                Login 
+                                <span class="material-symbols-outlined text-[20px] transition-transform group-hover:translate-x-1 font-bold">arrow_forward</span>
+                            </span>
+                        </button>
+                    </div>
+                </form>
+
+                <div class="mt-2 text-center">
+                    <p class="text-slate-400 text-sm">
+                        Not a member? 
+                        <a class="text-primary hover:text-white font-medium transition-colors drop-shadow-[0_0_5px_rgba(77,238,234,0.4)] hover:drop-shadow-[0_0_12px_rgba(77,238,234,0.9)]" href="register.html">Sign Up</a>
+                    </p>
+                </div>
+            </div>
+        </div>
+    </div>
+</body>
+</html>

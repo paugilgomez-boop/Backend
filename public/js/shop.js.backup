@@ -1,0 +1,190 @@
+let loggedInUser = null;
+
+$(document).ready(function(){
+    // Verificar si hay sesión activa
+    loggedInUser = obtenerSesionActiva();
+    if (!loggedInUser) {
+        transicionPagina("login.html");
+        return;
+    }
+    
+    $("body").addClass("loaded");
+    
+    $("#user-display").text(loggedInUser);
+
+    loadShopItems();
+    loadInventory(loggedInUser);
+    loadUserData(loggedInUser);
+
+    $("#logout-btn").click(function(){
+        cerrarSesion();
+        mostrarNotificacion("Cerrando sesión...", "exito");
+        $("body").removeClass("loaded");
+        setTimeout(() => {
+            transicionPagina("login.html");
+        }, 1500);
+    });
+
+    // Transition Link Handler - para navegación entre páginas
+    $(".transition-link").click(function(e){
+        e.preventDefault();
+        const target = $(this).attr("href");
+        if(target === "#") return;
+        
+        transicionPagina(target);
+    });
+
+    // Buy Button Handler - usa event delegation porque los botones se crean dinámicamente
+    $(document).on("click", ".buy-btn", function(e){
+        e.preventDefault();
+        const objectId = $(this).data("id");
+        const objectName = $(this).data("name");
+        handleBuyItem(objectId, objectName);
+    });
+});
+
+/**
+ * Carga la lista de objetos disponibles en la tienda
+ */
+function loadShopItems() {
+    const listElement = $("#shop-items-container");
+    listElement.html('<div class="col-span-full text-center text-slate-400 py-10">Cargando objetos...</div>');
+
+    fetch(`${CONFIG.API_URL}/game/shop/objects`)
+        .then(response => response.ok ? response.json() : [])
+        .then(items => {
+            listElement.empty();
+            if (items.length === 0) {
+                listElement.html('<div class="col-span-full text-center text-slate-500 py-10">No hay objetos disponibles</div>');
+            } else {
+                items.forEach(item => {
+                    const iconClass = getIconForType(item.tipo);
+                    listElement.append(`
+                        <div class="glass-card rounded-sm p-4 flex flex-col sm:flex-row gap-5 group relative overflow-hidden text-left">
+                            <div class="w-full sm:w-32 h-32 sm:h-auto aspect-square shrink-0 rounded-sm bg-[#0b1120] flex items-center justify-center relative overflow-hidden border border-neon-cyan-solid/30 group-hover:border-neon-cyan-solid transition-colors shadow-[0_0_15px_rgba(34,211,238,0.1)]">
+                                <i class="${iconClass} text-4xl text-neon-cyan-solid group-hover:scale-110 transition-transform duration-500"></i>
+                            </div>
+                            <div class="flex flex-col justify-between flex-1 py-1 z-10 w-full">
+                                <div>
+                                    <div class="flex justify-between items-start mb-2 gap-3">
+                                        <h3 class="text-lg font-bold text-white group-hover:text-neon-cyan-solid transition-colors tracking-wide group-hover:glow-text-cyan">${item.nombre}</h3>
+                                        <div class="bg-black border border-neon-cyan-solid text-neon-cyan-solid text-[10px] uppercase font-bold px-2 py-1 rounded-sm tracking-wider shrink-0 shadow-glow-cyan-sm">${item.tipo}</div>
+                                    </div>
+                                    <p class="text-slate-400 text-sm leading-relaxed mb-4 font-body">${item.descripcion}</p>
+                                </div>
+                                <div class="flex items-center justify-between mt-auto pt-3 border-t border-white/10 group-hover:border-neon-cyan-solid/30 transition-colors">
+                                    <p class="text-neon-cyan-solid font-bold flex items-center gap-1 glow-text-cyan">
+                                        <span class="material-symbols-outlined text-[18px]">monetization_on</span>
+                                        <span class="font-mono text-lg">${item.precio}</span>
+                                    </p>
+                                    <button class="buy-btn card-action-btn bg-neon-cyan-solid/10 hover:bg-neon-cyan-solid text-neon-cyan-solid hover:text-black text-sm font-bold py-2 px-6 rounded-sm transition-all border border-neon-cyan-solid flex items-center gap-2 active:scale-95 shadow-[0_0_10px_rgba(34,211,238,0.1)]" data-id="${item.id}" data-name="${item.nombre}">
+                                        <span>Purchase</span>
+                                    </button>
+                                </div>
+                            </div>
+                        </div>
+                    `);
+                });
+            }
+        })
+        .catch(error => {
+            console.error("Error cargando objetos:", error);
+            listElement.html('<div class="col-span-full text-center text-red-400 py-10">Error al cargar objetos</div>');
+        });
+}
+
+/**
+ * Carga el inventario del usuario
+ * @param {string} username - Nombre del usuario
+ */
+function loadInventory(username) {
+    const listElement = $("#inventory-list");
+    listElement.html('<div class="text-center text-slate-500 py-4">Actualizando...</div>');
+
+    fetch(`${CONFIG.API_URL}/game/users/objects/list?nombre=${username}`)
+        .then(response => response.ok ? response.json() : [])
+        .then(items => {
+            listElement.empty();
+            if (items.length === 0) {
+                listElement.html('<div class="text-center text-slate-500 py-4">Inventario vacío</div>');
+            } else {
+                items.forEach(item => {
+                    const iconClass = getIconForType(item.tipo);
+                    listElement.append(`
+                        <div class="relative flex items-center gap-3 p-3 bg-black/40 hover:bg-black/60 rounded-sm border border-neon-purple/20 hover:border-neon-purple transition-all group hover:shadow-neon-purple">
+                            <div class="size-14 rounded-sm bg-[#0b1120] border border-white/10 flex items-center justify-center overflow-hidden shrink-0 group-hover:border-neon-purple transition-colors">
+                                 <i class="${iconClass} text-2xl text-slate-400 group-hover:text-neon-purple transition-colors"></i>
+                            </div>
+                            <div class="flex-1 min-w-0">
+                                <h4 class="font-bold text-slate-200 group-hover:text-neon-purple truncate transition-colors text-sm group-hover:glow-text-purple">${item.nombre}</h4>
+                                <p class="text-[11px] text-slate-500 mt-0.5 group-hover:text-slate-400">${item.tipo}</p>
+                            </div>
+                            <div class="flex flex-col items-end gap-2">
+                                <div class="text-[10px] font-bold text-slate-400 bg-white/5 border border-white/10 px-2 py-1 rounded-sm transition-colors uppercase tracking-wide group-hover:border-neon-purple group-hover:text-neon-purple">
+                                    x ${item.cantidad}
+                                </div>
+                            </div>
+                        </div>
+                    `);
+                });
+            }
+        })
+        .catch(error => {
+            console.error("Error cargando inventario:", error);
+            listElement.html('<div class="text-center text-red-400 py-4">Error al cargar inventario</div>');
+        });
+}
+
+/**
+ * Carga los datos del usuario (monedas, etc.)
+ * @param {string} username - Nombre del usuario
+ */
+function loadUserData(username) {
+    fetch(`${CONFIG.API_URL}/game/users/${username}`)
+        .then(response => {
+            if (response.ok) return response.json();
+            else throw new Error("No se pudo cargar el usuario");
+        })
+        .then(user => {
+            $("#coin-display").text(user.monedas);
+        })
+        .catch(error => {
+            console.error("Error:", error);
+            $("#coin-display").text("Err");
+        });
+}
+
+/**
+ * Maneja la compra de un objeto
+ * @param {string} objectId - ID del objeto a comprar
+ * @param {string} objectName - Nombre del objeto (para mostrar en notificación)
+ */
+async function handleBuyItem(objectId, objectName) {
+    const requestBody = {
+        "nombre": loggedInUser,
+        "objectId": objectId
+    };
+
+    try {
+        const response = await fetch(`${CONFIG.API_URL}/game/users/objects/buy`, {
+            method: "POST",
+            headers: { "Content-Type": "application/json" },
+            body: JSON.stringify(requestBody)
+        });
+
+        if (!response.ok) {
+            throw await manejarErrorAPI(response, "compra");
+        }
+
+        const updatedUser = await response.json();
+        
+        mostrarNotificacion(`¡${objectName} comprado!`, "exito");
+        
+        // Actualizar inventario y monedas
+        loadInventory(loggedInUser);
+        $("#coin-display").text(updatedUser.monedas);
+        
+    } catch (error) {
+        mostrarNotificacion(error.message, "error");
+    }
+}
