@@ -33,14 +33,21 @@ public class GameManagerImpl implements GameManager {
         purchases = new HashMap<>();
     }
 
-    public static GameManagerImpl getInstance() {
-        logger.info("getInstance()");
+    public static synchronized GameManagerImpl getInstance() {
         if (instance == null) {
             instance = new GameManagerImpl();
-            logger.info("new repositories.GameManagerImpl()");
+            instance.addInitialData();
         }
-        logger.info("getInstance completed");
         return instance;
+    }
+
+    private void addInitialData() {
+        addItem(new Item("I101", "Espada de madera", "Una espada basica", "WEAPON", 10.0, true, "wood_sword"));
+        addItem(new Item("I102", "Escudo de cuero", "Proteccion ligera", "ARMOR", 15.0, true, "leather_shield"));
+        addItem(new Item("I103", "Pocion de vida", "Restaura 50 HP", "CONSUMABLE", 5.0, true, "health_potion"));
+
+        registerUser(new User("U101", "admin", "admin", "admin@tower.com", 1000.0, "ADMIN", 10));
+        registerUser(new User("U102", "user1", "user1", "user@mail.com", 50.0, "PLAYER", 1));
     }
 
     @Override

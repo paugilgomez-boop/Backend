@@ -8,9 +8,10 @@ import services.GameService;
 
 import java.io.IOException;
 import java.net.URI;
+import java.io.File;
 
 public class Main {
-    public static final String BASE_URI = "http://localhost:8080/dsaApp/";
+    public static final String BASE_URI = "http://0.0.0.0:8080/dsaApp/";
     final static Logger logger = Logger.getLogger(Main.class);
 
     public static HttpServer startServer() {
@@ -23,21 +24,35 @@ public class Main {
         BeanConfig beanConfig = new BeanConfig();
         beanConfig.setHost("localhost:8080");
         beanConfig.setBasePath("/dsaApp");
-        beanConfig.setResourcePackage(GameService.class.getPackage() == null ? "" : GameService.class.getPackage().getName());
-        beanConfig.setTitle("Tower Defence REST API");
-        beanConfig.setVersion("1.0.0");
-        beanConfig.setDescription("REST API for Game Management");
+        beanConfig.setResourcePackage("services");
         beanConfig.setScan(true);
 
-        return GrizzlyHttpServerFactory.createHttpServer(URI.create(BASE_URI), rc);
+        // Creamos el servidor pero NO lo arrancamos aún (start=false)
+        return GrizzlyHttpServerFactory.createHttpServer(URI.create(BASE_URI), rc, false);
     }
 
     public static void main(String[] args) throws IOException {
         final HttpServer server = startServer();
-        StaticHttpHandler staticHttpHandler = new StaticHttpHandler("./public/");
+
+        // Verificamos la ruta de la carpeta public para debug
+        File publicFolder = new File("public");
+        logger.info("Configuring static handler for: " + publicFolder.getAbsolutePath());
+        
+        if (!publicFolder.exists()) {
+            logger.error("WARNING: 'public' folder NOT FOUND at " + publicFolder.getAbsolutePath());
+        }
+
+        // Añadimos el handler de estáticos en la raíz
+        StaticHttpHandler staticHttpHandler = new StaticHttpHandler("public");
         server.getServerConfiguration().addHttpHandler(staticHttpHandler, "/");
 
-        logger.info("REST server started at " + BASE_URI);
+        // Arrancamos el servidor manualmente
+        server.start();
+
+        logger.info("REST server started at " + BASE_URI.replace("0.0.0.0", "localhost"));
+        logger.info("Web interface available at http://localhost:8080/login.html");
+        
+        System.out.println("Press enter to stop the server...");
         System.in.read();
         server.stop();
     }
