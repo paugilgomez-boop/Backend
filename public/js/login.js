@@ -26,7 +26,7 @@ $(document).ready(function () {
       });
 
       window.TD.saveCurrentUser(user);
-      window.location.href = "shop.html";
+      window.location.href = "menu.html";
     } catch (err) {
       alert(err && err.message ? err.message : "No se pudo iniciar sesión.");
     } finally {
