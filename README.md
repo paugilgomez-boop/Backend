@@ -24,6 +24,7 @@ Sistema integral (Backend + Frontend) para la gestión de usuarios, catálogo de
 
 ---
 
+
 ##  API REST (Endpoints)
 
 La API base est� disponible en `http://localhost:8080/dsaApp/game`.
