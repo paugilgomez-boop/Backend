@@ -7,7 +7,7 @@ $(document).ready(function () {
   });
 
   $("#go-game-btn").on("click", function () {
-    alert("La pantalla de juego aun no esta conectada.");
+    window.TD.showNotification("La pantalla de juego aun no esta conectada.", "warning");
   });
 
   $("#logout-btn").on("click", function () {

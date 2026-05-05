@@ -14,7 +14,7 @@ $(document).ready(function () {
     const password = ($password.val() || "").toString();
 
     if (!username || !password) {
-      alert("Introduce usuario y contraseña.");
+      window.TD.showNotification("Introduce usuario y contraseña.", "warning");
       return;
     }
 
@@ -28,7 +28,7 @@ $(document).ready(function () {
       window.TD.saveCurrentUser(user);
       window.location.href = "menu.html";
     } catch (err) {
-      alert(err && err.message ? err.message : "No se pudo iniciar sesión.");
+      window.TD.showNotification(err && err.message ? err.message : "No se pudo iniciar sesión.");
     } finally {
       setBusy(false);
     }

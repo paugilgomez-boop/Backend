@@ -91,15 +91,20 @@ $(document).ready(function () {
     const itemId = $(this).data("item-id");
     if (!itemId) return;
     try {
-      await window.TD.apiRequest(`/players/${encodeURIComponent(user.id)}/inventory`, {
+      const purchase = await window.TD.apiRequest(`/players/${encodeURIComponent(user.id)}/inventory`, {
         method: "POST",
         body: { itemId, quantity: 1 },
       });
-      // backend updates saldo on the server-side user instance; refresh user from local store is stale
-      // simplest approach: re-login is overkill; just refresh inventory & items and keep saldo display as-is
+
+      // Update local user state with new balance from server
+      if (purchase && purchase.userSaldo != null) {
+        user.saldo = purchase.userSaldo;
+        window.TD.saveCurrentUser(user);
+      }
+
       await refreshAll();
     } catch (err) {
-      alert(err && err.message ? err.message : "No se pudo comprar el item.");
+      window.TD.showNotification(err && err.message ? err.message : "No se pudo comprar el item.");
     }
   });
 

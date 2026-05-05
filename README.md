@@ -1,6 +1,6 @@
 # TowerDefence
 
-Sistema integral (Backend + Frontend) para la gestión de usuarios,  catálogo de items, inventarios y procesos de compra para un juego tipo Tower Defence.
+Sistema integral (Backend + Frontend) para la gestión de usuarios, catálogo de items, inventarios y procesos de compra para un juego tipo Tower Defence.
 
 
 

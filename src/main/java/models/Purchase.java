@@ -12,17 +12,19 @@ public class Purchase {
     private String itemId;
     private int quantity;
     private double totalPrice;
+    private double userSaldo;
     private String date;
 
     public Purchase() {
     }
 
-    public Purchase(String id, String userId, String itemId, int quantity, double totalPrice, String date) {
+    public Purchase(String id, String userId, String itemId, int quantity, double totalPrice, double userSaldo, String date) {
         this.id = id;
         this.userId = userId;
         this.itemId = itemId;
         this.quantity = quantity;
         this.totalPrice = totalPrice;
+        this.userSaldo = userSaldo;
         this.date = date;
     }
 
@@ -69,6 +71,15 @@ public class Purchase {
 
     public void setTotalPrice(double totalPrice) {
         this.totalPrice = totalPrice;
+    }
+
+    @ApiModelProperty(value = "Saldo restante del usuario tras la compra")
+    public double getUserSaldo() {
+        return userSaldo;
+    }
+
+    public void setUserSaldo(double userSaldo) {
+        this.userSaldo = userSaldo;
     }
 
     @ApiModelProperty(value = "Fecha de la compra")

@@ -24,11 +24,11 @@ $(document).ready(function () {
     const confirmPassword = ($password2.val() || "").toString();
 
     if (!email || !username || !password) {
-      alert("Rellena email, usuario y contraseña.");
+      window.TD.showNotification("Rellena email, usuario y contraseña.", "warning");
       return;
     }
     if (password !== confirmPassword) {
-      alert("Las contraseñas no coinciden.");
+      window.TD.showNotification("Las contraseñas no coinciden.", "warning");
       return;
     }
 
@@ -48,10 +48,12 @@ $(document).ready(function () {
         },
       });
 
-      alert("Usuario registrado. Ahora inicia sesión.");
-      window.location.href = "login.html";
+      window.TD.showNotification("Usuario registrado. Ahora inicia sesión.", "success");
+      setTimeout(() => {
+        window.location.href = "login.html";
+      }, 1500);
     } catch (err) {
-      alert(err && err.message ? err.message : "No se pudo registrar.");
+      window.TD.showNotification(err && err.message ? err.message : "No se pudo registrar.");
     } finally {
       setBusy(false);
     }

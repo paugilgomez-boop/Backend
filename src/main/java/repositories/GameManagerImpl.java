@@ -157,16 +157,15 @@ public class GameManagerImpl implements GameManager {
         for (Inventory inventory : userInventory) {
             if (inventory.getItemId().equals(itemId)) {
                 inventory.setQuantity(inventory.getQuantity() + quantity);
-                Purchase purchase = createPurchase(userId, itemId, quantity, totalPrice);
+                Purchase purchase = createPurchase(userId, itemId, quantity, totalPrice, user.getSaldo());
                 addPurchase(userId, purchase);
                 return purchase;
             }
         }
-
         Inventory inventory = new Inventory(userId, itemId, quantity);
         userInventory.add(inventory);
 
-        Purchase purchase = createPurchase(userId, itemId, quantity, totalPrice);
+        Purchase purchase = createPurchase(userId, itemId, quantity, totalPrice, user.getSaldo());
         addPurchase(userId, purchase);
         return purchase;
     }
@@ -233,8 +232,8 @@ public class GameManagerImpl implements GameManager {
         }
     }
 
-    private Purchase createPurchase(String userId, String itemId, int quantity, double totalPrice) {
-        return new Purchase(UUID.randomUUID().toString(), userId, itemId, quantity, totalPrice, Instant.now().toString());
+    private Purchase createPurchase(String userId, String itemId, int quantity, double totalPrice, double userSaldo) {
+        return new Purchase(UUID.randomUUID().toString(), userId, itemId, quantity, totalPrice, userSaldo, Instant.now().toString());
     }
 
     private void addPurchase(String userId, Purchase purchase) {
