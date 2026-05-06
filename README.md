@@ -29,9 +29,12 @@ Sistema integral (Backend + Frontend) para la gestión de usuarios, catálogo de
 
 La API base est� disponible en `http://localhost:8080/dsaApp/game`.
 
+Los IDs principales son numéricos (`int`) para encajar con una futura base de datos autoincremental. Si el registro recibe `id` vacío o `0`, el backend asigna el siguiente ID disponible.
+
 ### Autenticación
 - `POST /auth/register`: Registro de nuevos usuarios (Player/Admin).
 - `POST /auth/login`: Validación de credenciales.
+- `GET /users`: Listar usuarios con `id`, `username`, `email`, `saldo`, `permissions` y `level`.
 
 ### Catálogo de items
 - `GET /items`: Obtener la lista completa de items disponibles.

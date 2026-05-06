@@ -12,11 +12,6 @@ $(document).ready(function () {
     $btn.css("opacity", isBusy ? 0.7 : 1);
   }
 
-  function makeUserId() {
-    // Backend requires a non-empty id; keep it simple and unique enough for local use.
-    return `U${Date.now()}`;
-  }
-
   async function doRegister() {
     const email = ($email.val() || "").toString().trim();
     const username = ($username.val() || "").toString().trim();
@@ -37,7 +32,6 @@ $(document).ready(function () {
       await window.TD.apiRequest("/auth/register", {
         method: "POST",
         body: {
-          id: makeUserId(),
           email,
           username,
           password,

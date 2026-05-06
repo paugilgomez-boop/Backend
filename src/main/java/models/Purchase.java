@@ -7,9 +7,9 @@ import javax.xml.bind.annotation.XmlRootElement;
 @XmlRootElement
 @ApiModel(value = "Purchase", description = "Registro de Compra")
 public class Purchase {
-    private String id;
-    private String userId;
-    private String itemId;
+    private int id;
+    private int userId;
+    private int itemId;
     private int quantity;
     private double totalPrice;
     private double userSaldo;
@@ -18,7 +18,7 @@ public class Purchase {
     public Purchase() {
     }
 
-    public Purchase(String id, String userId, String itemId, int quantity, double totalPrice, double userSaldo, String date) {
+    public Purchase(int id, int userId, int itemId, int quantity, double totalPrice, double userSaldo, String date) {
         this.id = id;
         this.userId = userId;
         this.itemId = itemId;
@@ -29,29 +29,29 @@ public class Purchase {
     }
 
     @ApiModelProperty(value = "ID único de la compra")
-    public String getId() {
+    public int getId() {
         return id;
     }
 
-    public void setId(String id) {
+    public void setId(int id) {
         this.id = id;
     }
 
     @ApiModelProperty(value = "ID del usuario que realizó la compra")
-    public String getUserId() {
+    public int getUserId() {
         return userId;
     }
 
-    public void setUserId(String userId) {
+    public void setUserId(int userId) {
         this.userId = userId;
     }
 
     @ApiModelProperty(value = "ID del item comprado")
-    public String getItemId() {
+    public int getItemId() {
         return itemId;
     }
 
-    public void setItemId(String itemId) {
+    public void setItemId(int itemId) {
         this.itemId = itemId;
     }
 

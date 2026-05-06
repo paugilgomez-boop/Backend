@@ -28,96 +28,96 @@ public class GameManagerTest {
 
     @Test
     public void testRegisterUsersWithPermissions() {
-        User player = gm.registerUser(new User("P1", "player1", "1234", "player@mail.com", 100, "PLAYER", 1));
-        User admin = gm.registerUser(new User("A1", "admin1", "admin", "admin@mail.com", 0, "ADMIN", 0));
+        User player = gm.registerUser(new User(1, "player1", "1234", "player@mail.com", 100, "PLAYER", 1));
+        User admin = gm.registerUser(new User(2, "admin1", "admin", "admin@mail.com", 0, "ADMIN", 0));
 
-        Assert.assertEquals("P1", player.getId());
-        Assert.assertEquals("A1", admin.getId());
-        Assert.assertEquals("PLAYER", gm.getUser("P1").getPermissions());
-        Assert.assertEquals("ADMIN", gm.getUser("A1").getPermissions());
+        Assert.assertEquals(1, player.getId());
+        Assert.assertEquals(2, admin.getId());
+        Assert.assertEquals("PLAYER", gm.getUser(1).getPermissions());
+        Assert.assertEquals("ADMIN", gm.getUser(2).getPermissions());
     }
 
     @Test
     public void testLogin() {
-        gm.registerUser(new User("P1", "player1", "1234", "player@mail.com", 100, "PLAYER", 1));
+        gm.registerUser(new User(1, "player1", "1234", "player@mail.com", 100, "PLAYER", 1));
 
         User user = gm.login("player1", "1234");
 
-        Assert.assertEquals("P1", user.getId());
+        Assert.assertEquals(1, user.getId());
     }
 
     @Test(expected = NoSuchElementException.class)
     public void testLoginWithInvalidCredentials() {
-        gm.registerUser(new User("P1", "player1", "1234", "player@mail.com", 100, "PLAYER", 1));
+        gm.registerUser(new User(1, "player1", "1234", "player@mail.com", 100, "PLAYER", 1));
 
         gm.login("player1", "bad-password");
     }
 
     @Test
     public void testAddUpdateDeleteItem() {
-        gm.addItem(new Item("I1", "Sword", "Basic sword", "WEAPON", 25));
+        gm.addItem(new Item(1, "Sword", "Basic sword", "WEAPON", 25));
 
         Assert.assertEquals(1, gm.getAllItems().size());
-        Assert.assertEquals("Sword", gm.getItem("I1").getName());
+        Assert.assertEquals("Sword", gm.getItem(1).getName());
 
-        gm.updateItem("I1", new Item("I1", "Fire Sword", "Burning sword", "WEAPON", 40));
+        gm.updateItem(1, new Item(1, "Fire Sword", "Burning sword", "WEAPON", 40));
 
-        Assert.assertEquals("Fire Sword", gm.getItem("I1").getName());
-        Assert.assertEquals(40, gm.getItem("I1").getPrice(), 0.001);
+        Assert.assertEquals("Fire Sword", gm.getItem(1).getName());
+        Assert.assertEquals(40, gm.getItem(1).getPrice(), 0.001);
 
-        gm.deleteItem("I1");
+        gm.deleteItem(1);
 
         Assert.assertEquals(0, gm.getAllItems().size());
     }
 
     @Test
     public void testBuyItemAddsInventoryAndDiscountsBalance() {
-        gm.registerUser(new User("P1", "player1", "1234", "player@mail.com", 100, "PLAYER", 1));
-        gm.addItem(new Item("I1", "Potion", "Small heal", "CONSUMABLE", 10));
+        gm.registerUser(new User(1, "player1", "1234", "player@mail.com", 100, "PLAYER", 1));
+        gm.addItem(new Item(1, "Potion", "Small heal", "CONSUMABLE", 10));
 
-        Purchase purchase = gm.buyItem("P1", "I1", 3);
-        List<Inventory> inventory = gm.getInventoryByUser("P1");
+        Purchase purchase = gm.buyItem(1, 1, 3);
+        List<Inventory> inventory = gm.getInventoryByUser(1);
 
-        Assert.assertEquals("P1", purchase.getUserId());
-        Assert.assertEquals("I1", purchase.getItemId());
+        Assert.assertEquals(1, purchase.getUserId());
+        Assert.assertEquals(1, purchase.getItemId());
         Assert.assertEquals(30, purchase.getTotalPrice(), 0.001);
         Assert.assertEquals(1, inventory.size());
-        Assert.assertEquals("P1", inventory.get(0).getUserId());
-        Assert.assertEquals("I1", inventory.get(0).getItemId());
+        Assert.assertEquals(1, inventory.get(0).getUserId());
+        Assert.assertEquals(1, inventory.get(0).getItemId());
         Assert.assertEquals(3, inventory.get(0).getQuantity());
-        Assert.assertEquals(70, gm.getUser("P1").getSaldo(), 0.001);
+        Assert.assertEquals(70, gm.getUser(1).getSaldo(), 0.001);
     }
 
     @Test
     public void testBuySameItemIncreasesQuantity() {
-        gm.registerUser(new User("P1", "player1", "1234", "player@mail.com", 100, "PLAYER", 1));
-        gm.addItem(new Item("I1", "Potion", "Small heal", "CONSUMABLE", 10));
+        gm.registerUser(new User(1, "player1", "1234", "player@mail.com", 100, "PLAYER", 1));
+        gm.addItem(new Item(1, "Potion", "Small heal", "CONSUMABLE", 10));
 
-        gm.buyItem("P1", "I1", 2);
-        gm.buyItem("P1", "I1", 3);
+        gm.buyItem(1, 1, 2);
+        gm.buyItem(1, 1, 3);
 
-        List<Inventory> inventory = gm.getInventoryByUser("P1");
-        List<Purchase> purchases = gm.getPurchasesByUser("P1");
+        List<Inventory> inventory = gm.getInventoryByUser(1);
+        List<Purchase> purchases = gm.getPurchasesByUser(1);
 
         Assert.assertEquals(1, inventory.size());
         Assert.assertEquals(5, inventory.get(0).getQuantity());
         Assert.assertEquals(2, purchases.size());
-        Assert.assertEquals(50, gm.getUser("P1").getSaldo(), 0.001);
+        Assert.assertEquals(50, gm.getUser(1).getSaldo(), 0.001);
     }
 
     @Test(expected = IllegalStateException.class)
     public void testBuyItemWithoutEnoughBalance() {
-        gm.registerUser(new User("P1", "player1", "1234", "player@mail.com", 5, "PLAYER", 1));
-        gm.addItem(new Item("I1", "Potion", "Small heal", "CONSUMABLE", 10));
+        gm.registerUser(new User(1, "player1", "1234", "player@mail.com", 5, "PLAYER", 1));
+        gm.addItem(new Item(1, "Potion", "Small heal", "CONSUMABLE", 10));
 
-        gm.buyItem("P1", "I1", 1);
+        gm.buyItem(1, 1, 1);
     }
 
     @Test(expected = IllegalStateException.class)
     public void testBuyUnavailableItem() {
-        gm.registerUser(new User("P1", "player1", "1234", "player@mail.com", 100, "PLAYER", 1));
-        gm.addItem(new Item("I1", "Potion", "Small heal", "CONSUMABLE", 10, false, "potion_small"));
+        gm.registerUser(new User(1, "player1", "1234", "player@mail.com", 100, "PLAYER", 1));
+        gm.addItem(new Item(1, "Potion", "Small heal", "CONSUMABLE", 10, false, "potion_small"));
 
-        gm.buyItem("P1", "I1", 1);
+        gm.buyItem(1, 1, 1);
     }
 }

@@ -7,7 +7,7 @@ import javax.xml.bind.annotation.XmlRootElement;
 @XmlRootElement
 @ApiModel(value = "RegisterRequest", description = "Solicitud de Registro de Usuario")
 public class RegisterRequest {
-    private String id;
+    private int id;
     private String username;
     private String password;
     private String email;
@@ -20,8 +20,8 @@ public class RegisterRequest {
     }
 
     @ApiModelProperty(value = "ID del usuario")
-    public String getId() { return id; }
-    public void setId(String id) { this.id = id; }
+    public int getId() { return id; }
+    public void setId(int id) { this.id = id; }
 
     @ApiModelProperty(value = "Nombre de usuario")
     public String getUsername() { return username; }

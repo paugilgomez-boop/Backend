@@ -7,7 +7,7 @@ import javax.xml.bind.annotation.XmlRootElement;
 @XmlRootElement
 @ApiModel(value = "Item", description = "Modelo de Item en el Catálogo")
 public class Item {
-    private String id;
+    private int id;
     private String name;
     private String description;
     private String type;
@@ -18,11 +18,11 @@ public class Item {
     public Item() {
     }
 
-    public Item(String id, String name, String description, String type, double price) {
+    public Item(int id, String name, String description, String type, double price) {
         this(id, name, description, type, price, true, null);
     }
 
-    public Item(String id, String name, String description, String type, double price, boolean available, String assetName) {
+    public Item(int id, String name, String description, String type, double price, boolean available, String assetName) {
         this.id = id;
         this.name = name;
         this.description = description;
@@ -33,11 +33,11 @@ public class Item {
     }
 
     @ApiModelProperty(value = "Identificador único del item")
-    public String getId() {
+    public int getId() {
         return id;
     }
 
-    public void setId(String id) {
+    public void setId(int id) {
         this.id = id;
     }
 

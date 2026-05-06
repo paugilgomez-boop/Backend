@@ -53,3 +53,9 @@ User *-- Purchase
 Esto significa que `Inventory` y `Purchase` dependen del usuario: son datos asociados a un usuario concreto.
 
 No se usa rombo entre `Item` e `Inventory` o `Purchase`, porque `Item` pertenece al catalogo de la tienda. El inventario y las compras solo lo referencian mediante `itemId`.
+
+## IDs numericos
+
+Los identificadores principales (`User.id`, `Item.id`, `Inventory.userId`, `Inventory.itemId`, `Purchase.id`, `Purchase.userId`, `Purchase.itemId`) son `int`.
+
+Esto encaja con una futura base de datos con claves autoincrementales. En la implementacion actual en memoria, si se crea un usuario o item con `id <= 0`, el backend asigna el siguiente ID disponible.

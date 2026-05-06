@@ -110,7 +110,7 @@ public class GameService {
             @ApiResponse(code = 400, message = "Datos invalidos"),
             @ApiResponse(code = 404, message = "Item no encontrado")
     })
-    public Response updateItem(@PathParam("itemId") String itemId, ItemRequest request) {
+    public Response updateItem(@PathParam("itemId") int itemId, ItemRequest request) {
         try {
             Item item = toItem(request);
             return Response.status(200).entity(gm.updateItem(itemId, item)).build();
@@ -129,7 +129,7 @@ public class GameService {
             @ApiResponse(code = 204, message = "Item eliminado"),
             @ApiResponse(code = 404, message = "Item no encontrado")
     })
-    public Response deleteItem(@PathParam("itemId") String itemId) {
+    public Response deleteItem(@PathParam("itemId") int itemId) {
         try {
             gm.deleteItem(itemId);
             return Response.status(204).build();
@@ -151,6 +151,19 @@ public class GameService {
         return Response.status(200).entity(entity).build();
     }
 
+    @GET
+    @Path("/users")
+    @Produces(MediaType.APPLICATION_JSON)
+    @ApiOperation(value = "Ver todos los usuarios")
+    @ApiResponses(value = {
+            @ApiResponse(code = 200, message = "Consulta correcta", response = User.class, responseContainer = "List")
+    })
+    public Response getAllUsers() {
+        List<User> users = gm.getAllUsers();
+        GenericEntity<List<User>> entity = new GenericEntity<List<User>>(users) {};
+        return Response.status(200).entity(entity).build();
+    }
+
     @POST
     @Path("/players/{playerId}/inventory")
     @Consumes(MediaType.APPLICATION_JSON)
@@ -162,7 +175,7 @@ public class GameService {
             @ApiResponse(code = 404, message = "Player o item no encontrado"),
             @ApiResponse(code = 409, message = "Saldo insuficiente")
     })
-    public Response buyItem(@PathParam("playerId") String playerId, BuyItemRequest request) {
+    public Response buyItem(@PathParam("playerId") int playerId, BuyItemRequest request) {
         if (request == null) {
             return Response.status(400).entity("Datos de compra invalidos").build();
         }
@@ -186,7 +199,7 @@ public class GameService {
             @ApiResponse(code = 200, message = "Consulta correcta", response = Inventory.class, responseContainer = "List"),
             @ApiResponse(code = 404, message = "Player no encontrado")
     })
-    public Response getInventoryByUser(@PathParam("playerId") String playerId) {
+    public Response getInventoryByUser(@PathParam("playerId") int playerId) {
         try {
             List<Inventory> inventory = gm.getInventoryByUser(playerId);
             GenericEntity<List<Inventory>> entity = new GenericEntity<List<Inventory>>(inventory) {};
@@ -204,7 +217,7 @@ public class GameService {
             @ApiResponse(code = 200, message = "Consulta correcta", response = Purchase.class, responseContainer = "List"),
             @ApiResponse(code = 404, message = "Usuario no encontrado")
     })
-    public Response getPurchasesByPlayer(@PathParam("playerId") String playerId) {
+    public Response getPurchasesByPlayer(@PathParam("playerId") int playerId) {
         try {
             List<Purchase> purchases = gm.getPurchasesByUser(playerId);
             GenericEntity<List<Purchase>> entity = new GenericEntity<List<Purchase>>(purchases) {};

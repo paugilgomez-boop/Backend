@@ -14,7 +14,7 @@ skinparam class {
 title TowerDefence - Domain Model
 
 class User {
-    - id : String
+    - id : int
     - username : String
     - password : String
     - email : String
@@ -30,7 +30,7 @@ note right of User
 end note
 
 class Item {
-    - id : String
+    - id : int
     - name : String
     - description : String
     - type : String
@@ -46,23 +46,24 @@ note right of Item
 end note
 
 class Inventory {
-    - userId : String
-    - itemId : String
+    - userId : int
+    - itemId : int
     - quantity : int
 }
 
 note left of Inventory
   Represents the current state of ownership.
-  Example: user P1 owns 3 units of item I1.
+  Example: user 1 owns 3 units of item 101.
   It does not duplicate item data such as type or price.
 end note
 
 class Purchase {
-    - id : String
-    - userId : String
-    - itemId : String
+    - id : int
+    - userId : int
+    - itemId : int
     - quantity : int
     - totalPrice : double
+    - userSaldo : double
     - date : String
 }
 

@@ -7,7 +7,7 @@ import javax.xml.bind.annotation.XmlRootElement;
 @XmlRootElement
 @ApiModel(value = "ItemRequest", description = "Solicitud de Creación/Modificación de Item")
 public class ItemRequest {
-    private String id;
+    private int id;
     private String name;
     private String description;
     private String type;
@@ -19,8 +19,8 @@ public class ItemRequest {
     }
 
     @ApiModelProperty(value = "ID del item")
-    public String getId() { return id; }
-    public void setId(String id) { this.id = id; }
+    public int getId() { return id; }
+    public void setId(int id) { this.id = id; }
 
     @ApiModelProperty(value = "Nombre del item")
     public String getName() { return name; }

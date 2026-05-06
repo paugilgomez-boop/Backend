@@ -7,34 +7,34 @@ import javax.xml.bind.annotation.XmlRootElement;
 @XmlRootElement
 @ApiModel(value = "Inventory", description = "Inventario de un Usuario")
 public class Inventory {
-    private String userId;
-    private String itemId;
+    private int userId;
+    private int itemId;
     private int quantity;
 
     public Inventory() {
     }
 
-    public Inventory(String userId, String itemId, int quantity) {
+    public Inventory(int userId, int itemId, int quantity) {
         this.userId = userId;
         this.itemId = itemId;
         this.quantity = quantity;
     }
 
     @ApiModelProperty(value = "ID del usuario propietario del inventario")
-    public String getUserId() {
+    public int getUserId() {
         return userId;
     }
 
-    public void setUserId(String userId) {
+    public void setUserId(int userId) {
         this.userId = userId;
     }
 
     @ApiModelProperty(value = "ID del item en el inventario")
-    public String getItemId() {
+    public int getItemId() {
         return itemId;
     }
 
-    public void setItemId(String itemId) {
+    public void setItemId(int itemId) {
         this.itemId = itemId;
     }
 

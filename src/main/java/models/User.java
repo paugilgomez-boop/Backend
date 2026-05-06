@@ -7,7 +7,7 @@ import javax.xml.bind.annotation.XmlRootElement;
 @XmlRootElement
 @ApiModel(value = "User", description = "Modelo de Usuario del Sistema")
 public class User {
-    private String id;
+    private int id;
     private String username;
     private String password;
     private String email;
@@ -18,7 +18,7 @@ public class User {
     public User() {
     }
 
-    public User(String id, String username, String password, String email, double saldo, String permissions, int level) {
+    public User(int id, String username, String password, String email, double saldo, String permissions, int level) {
         this.id = id;
         this.username = username;
         this.password = password;
@@ -29,11 +29,11 @@ public class User {
     }
 
     @ApiModelProperty(value = "Identificador único del usuario")
-    public String getId() {
+    public int getId() {
         return id;
     }
 
-    public void setId(String id) {
+    public void setId(int id) {
         this.id = id;
     }
 

@@ -15,21 +15,23 @@ public interface GameManager {
 
     Item addItem(Item item);
 
-    Item updateItem(String itemId, Item item);
+    Item updateItem(int itemId, Item item);
 
-    void deleteItem(String itemId);
+    void deleteItem(int itemId);
 
     List<Item> getAllItems();
 
-    Item getItem(String itemId);
+    Item getItem(int itemId);
 
-    Purchase buyItem(String userId, String itemId, int quantity);
+    Purchase buyItem(int userId, int itemId, int quantity);
 
-    List<Inventory> getInventoryByUser(String userId);
+    List<Inventory> getInventoryByUser(int userId);
 
-    List<Purchase> getPurchasesByUser(String userId);
+    List<Purchase> getPurchasesByUser(int userId);
 
-    User getUser(String userId);
+    User getUser(int userId);
+
+    List<User> getAllUsers();
 
     void clear();
 }

@@ -6,6 +6,10 @@ $(document).ready(function () {
     window.location.href = "shop.html";
   });
 
+  $("#go-users-btn").on("click", function () {
+    window.location.href = "users.html";
+  });
+
   $("#go-game-btn").on("click", function () {
     window.TD.showNotification("La pantalla de juego aun no esta conectada.", "warning");
   });
