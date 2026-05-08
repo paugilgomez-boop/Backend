@@ -27,7 +27,7 @@ Sistema integral (Backend + Frontend) para la gestión de usuarios, catálogo de
 
 ##  API REST (Endpoints)
 
-La API base est� disponible en `http://localhost:8080/dsaApp/game`.
+La API base esta disponible en `http://localhost:8080/dsaApp/game`.
 
 Los IDs principales son numéricos (`int`) para encajar con una futura base de datos autoincremental. Si el registro recibe `id` vacío o `0`, el backend asigna el siguiente ID disponible.
 
