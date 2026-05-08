@@ -81,7 +81,7 @@
     <!-- jQuery & Application Scripts -->
     <script src="https://ajax.googleapis.com/ajax/libs/jquery/3.7.1/jquery.min.js"></script>
     <script src="js/common.js"></script>
-    <script src="js/shop.js"></script>
+    <script src="js/shop.js?v=2"></script>
 </head>
 
 <body class="text-slate-100 font-display min-h-screen flex flex-col overflow-x-hidden">
@@ -94,14 +94,24 @@
             <!-- Dual Logo Navigation -->
             <div class="flex items-center gap-6 h-full">
 
+                <!-- Play Button -->
+                <a href="#" id="play-btn" class="flex items-center gap-3 px-4 h-full hover:bg-white/10 transition-all">
+                    <div class="flex items-center justify-center bg-[#22c55e] rounded p-1.5 text-black shadow-[0_0_15px_rgba(34,197,94,0.4)]">
+                        <span class="material-symbols-outlined text-[20px]">play_arrow</span>
+                    </div>
+                    <div>
+                        <h2 class="text-lg font-bold leading-tight text-white drop-shadow-md uppercase">Jugar</h2>
+                    </div>
+                </a>
+
                 <!-- Shop Logo (Active) -->
-                <a href="#" class="nav-logo-btn active flex items-center gap-3 px-4 h-full">
+                <a href="shop.html" class="flex items-center gap-3 px-4 h-full bg-white/5 border-b-2 border-[#fbbf24]">
                     <div
-                        class="flex items-center justify-center bg-neon-purple rounded p-1.5 text-black shadow-neon-purple">
+                        class="flex items-center justify-center bg-[#fbbf24] rounded p-1.5 text-black shadow-[0_0_15px_rgba(251,191,36,0.4)]">
                         <span class="material-symbols-outlined text-[20px]">storefront</span>
                     </div>
                     <div>
-                        <h2 class="text-lg font-bold leading-tight text-white drop-shadow-md">Tienda</h2>
+                        <h2 class="text-lg font-bold leading-tight text-white drop-shadow-md uppercase">Tienda</h2>
                     </div>
                 </a>
 
