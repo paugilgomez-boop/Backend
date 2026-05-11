@@ -118,6 +118,12 @@ $(document).ready(function () {
     }
   });
 
+  $("#play-btn").on("click", function (e) {
+    e.preventDefault();
+    console.log("Play button clicked!");
+    window.TD.showNotification("La pantalla de juego aun no esta conectada.", "warning");
+  });
+
   $("#logout-btn").on("click", function () {
     window.TD.clearCurrentUser();
     window.location.href = "login.html";
