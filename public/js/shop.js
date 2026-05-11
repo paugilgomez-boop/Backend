@@ -6,6 +6,7 @@ $(document).ready(function () {
   const $coinDisplay = $("#coin-display");
   const $itemsContainer = $("#shop-items-container");
   const $inventoryList = $("#inventory-list");
+  let itemsById = {};
 
   function renderHeader(u) {
     if ($userDisplay.length) $userDisplay.text(u.username || u.id || "Usuario");
@@ -14,12 +15,19 @@ $(document).ready(function () {
 
   function renderItems(items) {
     if (!$itemsContainer.length) return;
+    itemsById = {};
     if (!Array.isArray(items) || items.length === 0) {
       $itemsContainer.html(
         `<div class="glass-panel p-6 rounded-sm border border-white/10 text-slate-300">No hay items disponibles.</div>`
       );
       return;
     }
+
+    items.forEach((it) => {
+      if (it && it.id != null) {
+        itemsById[String(it.id)] = it;
+      }
+    });
 
     const html = items
       .filter((it) => it && it.available !== false)
@@ -60,10 +68,12 @@ $(document).ready(function () {
       inv
         .map((row) => {
           const itemId = row.itemId || row.itemID || row.item || "Item";
+          const item = itemsById[String(itemId)];
+          const itemName = item && item.name ? item.name : itemId;
           const qty = row.quantity != null ? row.quantity : 0;
           return `
             <div class="flex items-center justify-between rounded-sm px-3 py-2 bg-black/30 border border-white/10">
-              <div class="font-semibold text-white">${itemId}</div>
+              <div class="font-semibold text-white">${itemName}</div>
               <div class="text-slate-200">x${qty}</div>
             </div>
           `;

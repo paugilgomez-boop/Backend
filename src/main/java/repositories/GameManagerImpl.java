@@ -4,12 +4,19 @@ import models.Inventory;
 import models.Item;
 import models.Purchase;
 import models.User;
+import orm.FactorySession;
+import orm.Session;
+import orm.dao.InventoryDAO;
+import orm.dao.InventoryDAOImpl;
+import orm.dao.ItemDAO;
+import orm.dao.ItemDAOImpl;
+import orm.dao.PurchaseDAO;
+import orm.dao.PurchaseDAOImpl;
+import orm.dao.UserDAO;
+import orm.dao.UserDAOImpl;
 import org.apache.log4j.Logger;
 
 import java.time.Instant;
-import java.util.ArrayList;
-import java.util.HashMap;
-import java.util.Iterator;
 import java.util.List;
 import java.util.NoSuchElementException;
 
@@ -18,78 +25,51 @@ public class GameManagerImpl implements GameManager {
     private static GameManagerImpl instance;
     final static Logger logger = Logger.getLogger(GameManagerImpl.class);
 
-    private HashMap<Integer, User> users;
-    private HashMap<String, User> usersByUsername;
-    private HashMap<Integer, Item> items;
-    private HashMap<Integer, List<Inventory>> inventories;
-    private HashMap<Integer, List<Purchase>> purchases;
-    private int nextUserId;
-    private int nextItemId;
-    private int nextPurchaseId;
+    private final UserDAO userDAO;
+    private final ItemDAO itemDAO;
+    private final InventoryDAO inventoryDAO;
+    private final PurchaseDAO purchaseDAO;
 
     private GameManagerImpl() {
-        users = new HashMap<>();
-        usersByUsername = new HashMap<>();
-        items = new HashMap<>();
-        inventories = new HashMap<>();
-        purchases = new HashMap<>();
-        nextUserId = 1;
-        nextItemId = 1;
-        nextPurchaseId = 1;
+        this.userDAO = new UserDAOImpl();
+        this.itemDAO = new ItemDAOImpl();
+        this.inventoryDAO = new InventoryDAOImpl();
+        this.purchaseDAO = new PurchaseDAOImpl();
+        addInitialDataIfNeeded();
     }
 
     public static synchronized GameManagerImpl getInstance() {
         if (instance == null) {
             instance = new GameManagerImpl();
-            instance.addInitialData();
         }
         return instance;
     }
 
-    private void addInitialData() {
-        addItem(new Item(101, "Espada de madera", "Una espada basica", "WEAPON", 10.0, true, "wood_sword"));
-        addItem(new Item(102, "Escudo de cuero", "Proteccion ligera", "ARMOR", 15.0, true, "leather_shield"));
-        addItem(new Item(103, "Pocion de vida", "Restaura 50 HP", "CONSUMABLE", 5.0, true, "health_potion"));
-
-        registerUser(new User(101, "admin", "admin", "admin@tower.com", 1000.0, "ADMIN", 10));
-        registerUser(new User(102, "user1", "user1", "user@mail.com", 50.0, "PLAYER", 1));
-    }
-
     @Override
     public void clear() {
-        logger.info("clear()");
-        users.clear();
-        usersByUsername.clear();
-        items.clear();
-        inventories.clear();
-        purchases.clear();
-        nextUserId = 1;
-        nextItemId = 1;
-        nextPurchaseId = 1;
+        logger.info("clear database data");
+        purchaseDAO.clear();
+        inventoryDAO.clear();
+        itemDAO.clear();
+        userDAO.clear();
         logger.info("clear completed");
     }
 
     @Override
     public User registerUser(User user) {
         validateUser(user);
-        if (user.getId() <= 0) {
-            user.setId(nextUserId++);
-        } else {
-            nextUserId = Math.max(nextUserId, user.getId() + 1);
+        if (user.getId() > 0 && userDAO.getUser(user.getId()) != null) {
+            throw new IllegalArgumentException("Ya existe un usuario con ese id");
         }
-        if (users.containsKey(user.getId()) || usersByUsername.containsKey(user.getUsername())) {
-            throw new IllegalArgumentException("Ya existe un usuario con ese id o username");
+        if (userDAO.getUserByUsername(user.getUsername()) != null) {
+            throw new IllegalArgumentException("Ya existe un usuario con ese username");
         }
-        users.put(user.getId(), user);
-        usersByUsername.put(user.getUsername(), user);
-        inventories.put(user.getId(), new ArrayList<Inventory>());
-        purchases.put(user.getId(), new ArrayList<Purchase>());
-        return user;
+        return userDAO.addUser(user);
     }
 
     @Override
     public User login(String username, String password) {
-        User user = usersByUsername.get(username);
+        User user = userDAO.getUserByUsername(username);
         if (user == null || !user.getPassword().equals(password)) {
             throw new NoSuchElementException("Credenciales invalidas");
         }
@@ -99,48 +79,38 @@ public class GameManagerImpl implements GameManager {
     @Override
     public Item addItem(Item item) {
         validateItem(item);
-        if (item.getId() <= 0) {
-            item.setId(nextItemId++);
-        } else {
-            nextItemId = Math.max(nextItemId, item.getId() + 1);
-        }
-        if (items.containsKey(item.getId())) {
+        if (item.getId() > 0 && itemDAO.getItem(item.getId()) != null) {
             throw new IllegalArgumentException("Ya existe un item con ese id");
         }
-        items.put(item.getId(), item);
-        return item;
+        return itemDAO.addItem(item);
     }
 
     @Override
     public Item updateItem(int itemId, Item item) {
-        if (!items.containsKey(itemId)) {
+        if (itemDAO.getItem(itemId) == null) {
             throw new NoSuchElementException("No existe ningun item con ese id");
         }
-        if (item != null) {
-            item.setId(itemId);
-        }
         validateItem(item);
-        items.put(itemId, item);
-        return item;
+        return itemDAO.updateItem(itemId, item);
     }
 
     @Override
     public void deleteItem(int itemId) {
-        if (!items.containsKey(itemId)) {
+        Item item = itemDAO.getItem(itemId);
+        if (item == null) {
             throw new NoSuchElementException("No existe ningun item con ese id");
         }
-        items.remove(itemId);
-        removeItemFromInventories(itemId);
+        itemDAO.deleteItem(item);
     }
 
     @Override
     public List<Item> getAllItems() {
-        return new ArrayList<>(items.values());
+        return itemDAO.getItems();
     }
 
     @Override
     public Item getItem(int itemId) {
-        Item item = items.get(itemId);
+        Item item = itemDAO.getItem(itemId);
         if (item == null) {
             throw new NoSuchElementException("No existe ningun item con ese id");
         }
@@ -152,71 +122,67 @@ public class GameManagerImpl implements GameManager {
         if (quantity <= 0) {
             throw new IllegalArgumentException("La cantidad debe ser mayor que 0");
         }
-        User user = users.get(userId);
-        if (user == null) {
-            throw new NoSuchElementException("No existe ningun usuario con ese id");
-        }
-        Item item = getItem(itemId);
-        if (!item.isAvailable()) {
-            throw new IllegalStateException("Item no disponible");
-        }
-        double totalPrice = item.getPrice() * quantity;
-        if (user.getSaldo() < totalPrice) {
-            throw new IllegalStateException("Saldo insuficiente");
-        }
 
-        user.setSaldo(user.getSaldo() - totalPrice);
-        List<Inventory> userInventory = inventories.get(userId);
-        if (userInventory == null) {
-            userInventory = new ArrayList<>();
-            inventories.put(userId, userInventory);
-        }
+        Session session = null;
+        try {
+            session = FactorySession.openSession();
+            session.beginTransaction();
 
-        for (Inventory inventory : userInventory) {
-            if (inventory.getItemId() == itemId) {
-                inventory.setQuantity(inventory.getQuantity() + quantity);
-                Purchase purchase = createPurchase(userId, itemId, quantity, totalPrice, user.getSaldo());
-                addPurchase(userId, purchase);
-                return purchase;
+            User user = (User) session.get(User.class, userId);
+            if (user == null) {
+                throw new NoSuchElementException("No existe ningun usuario con ese id");
+            }
+
+            Item item = (Item) session.get(Item.class, itemId);
+            if (item == null) {
+                throw new NoSuchElementException("No existe ningun item con ese id");
+            }
+            if (!item.isAvailable()) {
+                throw new IllegalStateException("Item no disponible");
+            }
+
+            double totalPrice = item.getPrice() * quantity;
+            if (user.getSaldo() < totalPrice) {
+                throw new IllegalStateException("Saldo insuficiente");
+            }
+
+            double newSaldo = user.getSaldo() - totalPrice;
+            user.setSaldo(newSaldo);
+            userDAO.updateUser(session, user);
+            inventoryDAO.addOrIncreaseItem(session, userId, itemId, quantity);
+
+            Purchase purchase = new Purchase(0, userId, itemId, quantity, totalPrice, newSaldo, Instant.now().toString());
+            purchaseDAO.addPurchase(session, purchase);
+
+            session.commit();
+            return purchase;
+        } catch (RuntimeException e) {
+            if (session != null) {
+                session.rollback();
+            }
+            throw e;
+        } finally {
+            if (session != null) {
+                session.close();
             }
         }
-        Inventory inventory = new Inventory(userId, itemId, quantity);
-        userInventory.add(inventory);
-
-        Purchase purchase = createPurchase(userId, itemId, quantity, totalPrice, user.getSaldo());
-        addPurchase(userId, purchase);
-        return purchase;
     }
 
     @Override
     public List<Inventory> getInventoryByUser(int userId) {
-        User user = users.get(userId);
-        if (user == null) {
-            throw new NoSuchElementException("No existe ningun usuario con ese id");
-        }
-        List<Inventory> userInventory = inventories.get(userId);
-        if (userInventory == null) {
-            return new ArrayList<>();
-        }
-        return new ArrayList<>(userInventory);
+        ensureUserExists(userId);
+        return inventoryDAO.getInventoryByUser(userId);
     }
 
     @Override
     public List<Purchase> getPurchasesByUser(int userId) {
-        User user = users.get(userId);
-        if (user == null) {
-            throw new NoSuchElementException("No existe ningun usuario con ese id");
-        }
-        List<Purchase> userPurchases = purchases.get(userId);
-        if (userPurchases == null) {
-            return new ArrayList<>();
-        }
-        return new ArrayList<>(userPurchases);
+        ensureUserExists(userId);
+        return purchaseDAO.getPurchasesByUser(userId);
     }
 
     @Override
     public User getUser(int userId) {
-        User user = users.get(userId);
+        User user = userDAO.getUser(userId);
         if (user == null) {
             throw new NoSuchElementException("No existe ningun usuario con ese id");
         }
@@ -225,7 +191,26 @@ public class GameManagerImpl implements GameManager {
 
     @Override
     public List<User> getAllUsers() {
-        return new ArrayList<>(users.values());
+        return userDAO.getUsers();
+    }
+
+    private void addInitialDataIfNeeded() {
+        if (itemDAO.isEmpty()) {
+            addItem(new Item(101, "Espada de madera", "Una espada basica", "WEAPON", 10.0, true, "wood_sword"));
+            addItem(new Item(102, "Escudo de cuero", "Proteccion ligera", "ARMOR", 15.0, true, "leather_shield"));
+            addItem(new Item(103, "Pocion de vida", "Restaura 50 HP", "CONSUMABLE", 5.0, true, "health_potion"));
+        }
+
+        if (userDAO.isEmpty()) {
+            registerUser(new User(101, "admin", "admin", "admin@tower.com", 1000.0, "ADMIN", 10));
+            registerUser(new User(102, "user1", "user1", "user@mail.com", 50.0, "PLAYER", 1));
+        }
+    }
+
+    private void ensureUserExists(int userId) {
+        if (userDAO.getUser(userId) == null) {
+            throw new NoSuchElementException("No existe ningun usuario con ese id");
+        }
     }
 
     private void validateUser(User user) {
@@ -242,29 +227,5 @@ public class GameManagerImpl implements GameManager {
 
     private boolean isBlank(String value) {
         return value == null || value.trim().isEmpty();
-    }
-
-    private void removeItemFromInventories(int itemId) {
-        for (List<Inventory> playerInventory : inventories.values()) {
-            Iterator<Inventory> iterator = playerInventory.iterator();
-            while (iterator.hasNext()) {
-                if (iterator.next().getItemId() == itemId) {
-                    iterator.remove();
-                }
-            }
-        }
-    }
-
-    private Purchase createPurchase(int userId, int itemId, int quantity, double totalPrice, double userSaldo) {
-        return new Purchase(nextPurchaseId++, userId, itemId, quantity, totalPrice, userSaldo, Instant.now().toString());
-    }
-
-    private void addPurchase(int userId, Purchase purchase) {
-        List<Purchase> userPurchases = purchases.get(userId);
-        if (userPurchases == null) {
-            userPurchases = new ArrayList<>();
-            purchases.put(userId, userPurchases);
-        }
-        userPurchases.add(purchase);
     }
 }
