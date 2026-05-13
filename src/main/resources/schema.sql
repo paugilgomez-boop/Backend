@@ -1,0 +1,43 @@
+CREATE DATABASE IF NOT EXISTS towerdefence;
+USE towerdefence;
+
+CREATE TABLE IF NOT EXISTS User (
+    id INT AUTO_INCREMENT PRIMARY KEY,
+    username VARCHAR(100) NOT NULL UNIQUE,
+    password VARCHAR(255) NOT NULL,
+    email VARCHAR(150),
+    saldo DOUBLE NOT NULL DEFAULT 0,
+    permissions VARCHAR(30) NOT NULL DEFAULT 'PLAYER',
+    level INT NOT NULL DEFAULT 1
+);
+
+CREATE TABLE IF NOT EXISTS Item (
+    id INT AUTO_INCREMENT PRIMARY KEY,
+    name VARCHAR(120) NOT NULL,
+    description VARCHAR(255),
+    type VARCHAR(50) NOT NULL,
+    price DOUBLE NOT NULL,
+    available BOOLEAN NOT NULL DEFAULT TRUE,
+    assetName VARCHAR(120)
+);
+
+CREATE TABLE IF NOT EXISTS Inventory (
+    userId INT NOT NULL,
+    itemId INT NOT NULL,
+    quantity INT NOT NULL,
+    PRIMARY KEY (userId, itemId),
+    CONSTRAINT fk_inventory_user FOREIGN KEY (userId) REFERENCES User(id) ON DELETE CASCADE,
+    CONSTRAINT fk_inventory_item FOREIGN KEY (itemId) REFERENCES Item(id) ON DELETE CASCADE
+);
+
+CREATE TABLE IF NOT EXISTS Purchase (
+    id INT AUTO_INCREMENT PRIMARY KEY,
+    userId INT NOT NULL,
+    itemId INT NOT NULL,
+    quantity INT NOT NULL,
+    totalPrice DOUBLE NOT NULL,
+    userSaldo DOUBLE NOT NULL,
+    date VARCHAR(64) NOT NULL,
+    CONSTRAINT fk_purchase_user FOREIGN KEY (userId) REFERENCES User(id) ON DELETE CASCADE,
+    CONSTRAINT fk_purchase_item FOREIGN KEY (itemId) REFERENCES Item(id) ON DELETE CASCADE
+);
