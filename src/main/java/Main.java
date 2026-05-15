@@ -11,7 +11,6 @@ import java.net.URI;
 import java.io.File;
 
 public class Main {
-    public static final String SERVER_HOST = "192.168.10.24";
     public static final String BASE_URI = "http://0.0.0.0:8080/dsaApp/";
     final static Logger logger = Logger.getLogger(Main.class);
 
@@ -23,7 +22,7 @@ public class Main {
                 .register(io.swagger.jaxrs.listing.SwaggerSerializers.class);
 
         BeanConfig beanConfig = new BeanConfig();
-        beanConfig.setHost(SERVER_HOST + ":8080");
+        beanConfig.setHost("localhost:8080");
         beanConfig.setBasePath("/dsaApp");
         beanConfig.setResourcePackage("services");
         beanConfig.setScan(true);
@@ -50,8 +49,8 @@ public class Main {
         // Arrancamos el servidor manualmente
         server.start();
 
-        logger.info("REST server listening on " + BASE_URI + " (reachable at http://" + SERVER_HOST + ":8080/dsaApp/)");
-        logger.info("Web interface available at http://" + SERVER_HOST + ":8080/login.html");
+        logger.info("REST server started at " + BASE_URI.replace("0.0.0.0", "localhost"));
+        logger.info("Web interface available at http://localhost:8080/login.html");
         
         System.out.println("Press enter to stop the server...");
         System.in.read();
