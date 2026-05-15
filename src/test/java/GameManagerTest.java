@@ -23,7 +23,8 @@ public class GameManagerTest {
 
     @After
     public void tearDown() {
-        gm.clear();
+
+        //gm.clear();
     }
 
     @Test

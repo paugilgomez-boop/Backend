@@ -24,6 +24,7 @@ public class SessionImpl implements Session {
     @Override
     public void save(Object entity) {
         String query = QueryHelper.createQueryINSERT(entity);
+        // logger.info
         try (PreparedStatement pstm = conn.prepareStatement(query, Statement.RETURN_GENERATED_KEYS)) {
             int index = 1;
             for (String field : ObjectHelper.getFields(entity)) {
