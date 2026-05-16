@@ -2,6 +2,7 @@ package orm;
 
 import orm.util.ObjectHelper;
 import orm.util.QueryHelper;
+import org.apache.log4j.Logger;
 
 import java.sql.Connection;
 import java.sql.PreparedStatement;
@@ -14,6 +15,8 @@ import java.util.HashMap;
 import java.util.List;
 
 public class SessionImpl implements Session {
+    final static Logger logger = Logger.getLogger(SessionImpl.class);
+
     private final Connection conn;
     private boolean inTransaction;
 
@@ -24,7 +27,7 @@ public class SessionImpl implements Session {
     @Override
     public void save(Object entity) {
         String query = QueryHelper.createQueryINSERT(entity);
-        // logger.info
+        logger.info("save " + entity.getClass().getSimpleName());
         try (PreparedStatement pstm = conn.prepareStatement(query, Statement.RETURN_GENERATED_KEYS)) {
             int index = 1;
             for (String field : ObjectHelper.getFields(entity)) {
@@ -32,7 +35,9 @@ public class SessionImpl implements Session {
             }
             pstm.executeUpdate();
             copyGeneratedId(entity, pstm);
+            logger.info("save completed for " + entity.getClass().getSimpleName());
         } catch (SQLException e) {
+            logger.error("Error guardando " + entity.getClass().getSimpleName(), e);
             throw new RuntimeException("Error guardando " + entity.getClass().getSimpleName(), e);
         }
     }
@@ -40,15 +45,20 @@ public class SessionImpl implements Session {
     @Override
     public Object get(Class theClass, Object id) {
         String query = QueryHelper.createQuerySELECT(theClass);
+        logger.info("get " + theClass.getSimpleName() + " id=" + id);
         try (PreparedStatement pstm = conn.prepareStatement(query)) {
             pstm.setObject(1, id);
             try (ResultSet rs = pstm.executeQuery()) {
                 if (!rs.next()) {
+                    logger.info("get without result for " + theClass.getSimpleName() + " id=" + id);
                     return null;
                 }
-                return mapRow(theClass, rs);
+                Object result = mapRow(theClass, rs);
+                logger.info("get completed for " + theClass.getSimpleName() + " id=" + id);
+                return result;
             }
         } catch (Exception e) {
+            logger.error("Error buscando " + theClass.getSimpleName() + " id=" + id, e);
             throw new RuntimeException("Error buscando " + theClass.getSimpleName(), e);
         }
     }
@@ -56,6 +66,7 @@ public class SessionImpl implements Session {
     @Override
     public void update(Object entity) {
         String query = QueryHelper.createQueryUPDATE(entity);
+        logger.info("update " + entity.getClass().getSimpleName());
         try (PreparedStatement pstm = conn.prepareStatement(query)) {
             String[] fields = ObjectHelper.getFields(entity);
             int index = 1;
@@ -64,7 +75,9 @@ public class SessionImpl implements Session {
             }
             pstm.setObject(index, ObjectHelper.getter(entity, fields[0]));
             pstm.executeUpdate();
+            logger.info("update completed for " + entity.getClass().getSimpleName());
         } catch (SQLException e) {
+            logger.error("Error actualizando " + entity.getClass().getSimpleName(), e);
             throw new RuntimeException("Error actualizando " + entity.getClass().getSimpleName(), e);
         }
     }
@@ -72,11 +85,14 @@ public class SessionImpl implements Session {
     @Override
     public void delete(Object entity) {
         String query = QueryHelper.createQueryDELETE(entity);
+        logger.info("delete " + entity.getClass().getSimpleName());
         try (PreparedStatement pstm = conn.prepareStatement(query)) {
             String idField = ObjectHelper.getFields(entity)[0];
             pstm.setObject(1, ObjectHelper.getter(entity, idField));
             pstm.executeUpdate();
+            logger.info("delete completed for " + entity.getClass().getSimpleName());
         } catch (SQLException e) {
+            logger.error("Error eliminando " + entity.getClass().getSimpleName(), e);
             throw new RuntimeException("Error eliminando " + entity.getClass().getSimpleName(), e);
         }
     }
@@ -85,6 +101,7 @@ public class SessionImpl implements Session {
     public List<Object> findAll(Class theClass, HashMap<String, Object> params) {
         String query = QueryHelper.createQueryFINDALL(theClass, params);
         List<Object> result = new ArrayList<>();
+        logger.info("findAll " + theClass.getSimpleName() + " filters=" + (params == null ? 0 : params.size()));
         try (PreparedStatement pstm = conn.prepareStatement(query)) {
             int index = 1;
             if (params != null) {
@@ -97,8 +114,10 @@ public class SessionImpl implements Session {
                     result.add(mapRow(theClass, rs));
                 }
             }
+            logger.info("findAll completed for " + theClass.getSimpleName() + " results=" + result.size());
             return result;
         } catch (Exception e) {
+            logger.error("Error listando " + theClass.getSimpleName(), e);
             throw new RuntimeException("Error listando " + theClass.getSimpleName(), e);
         }
     }
@@ -113,7 +132,9 @@ public class SessionImpl implements Session {
         try {
             conn.setAutoCommit(false);
             inTransaction = true;
+            logger.info("transaction started");
         } catch (SQLException e) {
+            logger.error("Error iniciando transaccion", e);
             throw new RuntimeException("Error iniciando transaccion", e);
         }
     }
@@ -125,8 +146,10 @@ public class SessionImpl implements Session {
                 conn.commit();
                 conn.setAutoCommit(true);
                 inTransaction = false;
+                logger.info("transaction committed");
             }
         } catch (SQLException e) {
+            logger.error("Error confirmando transaccion", e);
             throw new RuntimeException("Error confirmando transaccion", e);
         }
     }
@@ -138,8 +161,10 @@ public class SessionImpl implements Session {
                 conn.rollback();
                 conn.setAutoCommit(true);
                 inTransaction = false;
+                logger.info("transaction rolled back");
             }
         } catch (SQLException e) {
+            logger.error("Error cancelando transaccion", e);
             throw new RuntimeException("Error cancelando transaccion", e);
         }
     }
@@ -149,8 +174,10 @@ public class SessionImpl implements Session {
         try {
             if (conn != null && !conn.isClosed()) {
                 conn.close();
+                logger.info("session closed");
             }
         } catch (SQLException e) {
+            logger.error("Error cerrando sesion", e);
             throw new RuntimeException("Error cerrando sesion", e);
         }
     }
@@ -175,7 +202,9 @@ public class SessionImpl implements Session {
         }
         try (ResultSet keys = pstm.getGeneratedKeys()) {
             if (keys.next()) {
-                ObjectHelper.setter(entity, "id", keys.getInt(1));
+                int generatedId = keys.getInt(1);
+                ObjectHelper.setter(entity, "id", generatedId);
+                logger.info("generated id assigned to " + entity.getClass().getSimpleName() + ": " + generatedId);
             }
         }
     }

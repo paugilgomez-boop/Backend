@@ -69,8 +69,8 @@ public class GameManagerImpl implements GameManager {
 
     @Override
     public User login(String username, String password) {
-        User user = userDAO.getUserByUsername(username);
-        if (user == null || !user.getPassword().equals(password)) {
+        User user = userDAO.getUserByCredentials(username, password);
+        if (user == null) {
             throw new NoSuchElementException("Credenciales invalidas");
         }
         return user;

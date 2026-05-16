@@ -12,6 +12,8 @@ public interface UserDAO {
 
     User getUserByUsername(String username);
 
+    User getUserByCredentials(String username, String password);
+
     void updateUser(Session session, User user);
 
     List<User> getUsers();
