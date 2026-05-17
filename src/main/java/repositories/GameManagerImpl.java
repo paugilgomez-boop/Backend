@@ -251,6 +251,27 @@ public class GameManagerImpl implements GameManager {
     }
 
     private void addInitialDataIfNeeded() {
+        // Comprobar si la base de datos tiene objetos de la tienda antigua
+        boolean hasOldItems = false;
+        try {
+            for (Item item : itemDAO.getItems()) {
+                if ("Espada de madera".equalsIgnoreCase(item.getName()) || 
+                    "Escudo de cuero".equalsIgnoreCase(item.getName()) || 
+                    "Pocion de vida".equalsIgnoreCase(item.getName())) {
+                    hasOldItems = true;
+                    break;
+                }
+            }
+        } catch (Exception e) {
+            logger.error("Error al comprobar items antiguos", e);
+        }
+
+        // Si hay objetos antiguos, limpiamos la base de datos automáticamente
+        if (hasOldItems) {
+            logger.info("Detectados objetos de la tienda antigua. Limpiando base de datos para actualizar...");
+            clear();
+        }
+
         if (itemDAO.isEmpty()) {
             addItem(new Item(1, "Refuerzo de Muralla", "Aumenta la vida de la base", "ARMOR", 100.0, true, "wall_upgrade.png"));
             addItem(new Item(2, "Calibracion de Cañon", "Mejora el daño de disparo", "WEAPON", 150.0, true, "damage_upgrade.png"));
