@@ -191,6 +191,26 @@ public class GameService {
         }
     }
 
+    @DELETE
+    @Path("/players/{playerId}/inventory/{itemId}")
+    @Produces(MediaType.APPLICATION_JSON)
+    @ApiOperation(value = "Vender un item y devolver monedas")
+    @ApiResponses(value = {
+            @ApiResponse(code = 200, message = "Item vendido"),
+            @ApiResponse(code = 404, message = "Player o item no encontrado"),
+            @ApiResponse(code = 400, message = "No tienes el item o cantidad invalida")
+    })
+    public Response sellItem(@PathParam("playerId") int playerId, @PathParam("itemId") int itemId) {
+        try {
+            Purchase purchase = gm.sellItem(playerId, itemId, 1);
+            return Response.status(200).entity(purchase).build();
+        } catch (NoSuchElementException e) {
+            return Response.status(404).entity(e.getMessage()).build();
+        } catch (IllegalStateException | IllegalArgumentException e) {
+            return Response.status(400).entity(e.getMessage()).build();
+        }
+    }
+
     @GET
     @Path("/players/{playerId}/inventory")
     @Produces(MediaType.APPLICATION_JSON)

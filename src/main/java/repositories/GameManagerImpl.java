@@ -17,6 +17,7 @@ import orm.dao.UserDAOImpl;
 import org.apache.log4j.Logger;
 
 import java.time.Instant;
+import java.util.HashMap;
 import java.util.List;
 import java.util.NoSuchElementException;
 
@@ -69,8 +70,8 @@ public class GameManagerImpl implements GameManager {
 
     @Override
     public User login(String username, String password) {
-        User user = userDAO.getUserByCredentials(username, password);
-        if (user == null) {
+        User user = userDAO.getUserByUsername(username);
+        if (user == null || !user.getPassword().equals(password)) {
             throw new NoSuchElementException("Credenciales invalidas");
         }
         return user;
@@ -169,6 +170,61 @@ public class GameManagerImpl implements GameManager {
     }
 
     @Override
+    public Purchase sellItem(int userId, int itemId, int quantity) {
+        if (quantity <= 0) {
+            throw new IllegalArgumentException("La cantidad debe ser mayor que 0");
+        }
+
+        Session session = null;
+        try {
+            session = FactorySession.openSession();
+            session.beginTransaction();
+
+            User user = (User) session.get(User.class, userId);
+            if (user == null) {
+                throw new NoSuchElementException("No existe ningun usuario con ese id");
+            }
+
+            Item item = (Item) session.get(Item.class, itemId);
+            if (item == null) {
+                throw new NoSuchElementException("No existe ningun item con ese id");
+            }
+
+            // Check if user has the item and enough quantity
+            HashMap<String, Object> params = new HashMap<>();
+            params.put("userId", userId);
+            params.put("itemId", itemId);
+            @SuppressWarnings("unchecked")
+            List<Inventory> invList = (List<Inventory>) (List<?>) session.findAll(Inventory.class, params);
+            if (invList.isEmpty() || invList.get(0).getQuantity() < quantity) {
+                throw new IllegalStateException("No tienes suficiente cantidad de este item");
+            }
+
+            double refund = item.getPrice() * quantity;
+            double newSaldo = user.getSaldo() + refund;
+            
+            user.setSaldo(newSaldo);
+            userDAO.updateUser(session, user);
+            inventoryDAO.decreaseOrRemoveItem(session, userId, itemId, quantity);
+
+            Purchase saleRecord = new Purchase(0, userId, itemId, -quantity, -refund, newSaldo, java.time.Instant.now().toString());
+            purchaseDAO.addPurchase(session, saleRecord);
+
+            session.commit();
+            return saleRecord;
+        } catch (RuntimeException e) {
+            if (session != null) {
+                session.rollback();
+            }
+            throw e;
+        } finally {
+            if (session != null) {
+                session.close();
+            }
+        }
+    }
+
+    @Override
     public List<Inventory> getInventoryByUser(int userId) {
         ensureUserExists(userId);
         return inventoryDAO.getInventoryByUser(userId);
@@ -196,9 +252,11 @@ public class GameManagerImpl implements GameManager {
 
     private void addInitialDataIfNeeded() {
         if (itemDAO.isEmpty()) {
-            addItem(new Item(101, "Espada de madera", "Una espada basica", "WEAPON", 10.0, true, "wood_sword"));
-            addItem(new Item(102, "Escudo de cuero", "Proteccion ligera", "ARMOR", 15.0, true, "leather_shield"));
-            addItem(new Item(103, "Pocion de vida", "Restaura 50 HP", "CONSUMABLE", 5.0, true, "health_potion"));
+            addItem(new Item(1, "Refuerzo de Muralla", "Aumenta la vida de la base", "ARMOR", 100.0, true, "wall_upgrade.png"));
+            addItem(new Item(2, "Calibracion de Cañon", "Mejora el daño de disparo", "WEAPON", 150.0, true, "damage_upgrade.png"));
+            addItem(new Item(3, "Municion de Cadencia", "Aumenta la velocidad de ataque", "BOOST", 120.0, true, "speed_upgrade.png"));
+            addItem(new Item(4, "Lente de Precision", "Aumenta el rango de ataque", "BOOST", 200.0, true, "range_upgrade.png"));
+            addItem(new Item(5, "Kit de Reparacion", "Restaura vida de la base", "CONSUMABLE", 50.0, true, "repair_kit.png"));
         }
 
         if (userDAO.isEmpty()) {
