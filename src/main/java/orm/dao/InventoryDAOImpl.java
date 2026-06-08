@@ -25,6 +25,26 @@ public class InventoryDAOImpl implements InventoryDAO {
             throw new RuntimeException("Error actualizando inventario", e);
         }
     }
+    @Override
+    public void decreaseOrRemoveItem(Session session, int userId, int itemId, int quantity) {
+        try {
+            String queryUpdate = "UPDATE Inventory SET quantity = quantity - ? WHERE userId = ? AND itemId = ?";
+            try (PreparedStatement pstm = session.getConnection().prepareStatement(queryUpdate)) {
+                pstm.setInt(1, quantity);
+                pstm.setInt(2, userId);
+                pstm.setInt(3, itemId);
+                pstm.executeUpdate();
+            }
+            String queryDelete = "DELETE FROM Inventory WHERE userId = ? AND itemId = ? AND quantity <= 0";
+            try (PreparedStatement pstm = session.getConnection().prepareStatement(queryDelete)) {
+                pstm.setInt(1, userId);
+                pstm.setInt(2, itemId);
+                pstm.executeUpdate();
+            }
+        } catch (Exception e) {
+            throw new RuntimeException("Error al retirar item del inventario", e);
+        }
+    }
 
     @Override
     public List<Inventory> getInventoryByUser(int userId) {

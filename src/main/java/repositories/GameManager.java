@@ -26,6 +26,8 @@ public interface GameManager {
     Item getItem(int itemId);
 
     Purchase buyItem(int userId, int itemId, int quantity);
+    
+    Purchase sellItem(int userId, int itemId, int quantity);
 
     List<Inventory> getInventoryByUser(int userId);
 
