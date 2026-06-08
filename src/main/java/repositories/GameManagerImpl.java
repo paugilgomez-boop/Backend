@@ -4,8 +4,14 @@ import models.Inventory;
 import models.Item;
 import models.Purchase;
 import models.User;
+import models.GameEvent;
+import models.EventRegistration;
 import orm.FactorySession;
 import orm.Session;
+import orm.dao.EventDAO;
+import orm.dao.EventDAOImpl;
+import orm.dao.EventRegistrationDAO;
+import orm.dao.EventRegistrationDAOImpl;
 import orm.dao.InventoryDAO;
 import orm.dao.InventoryDAOImpl;
 import orm.dao.ItemDAO;
@@ -29,12 +35,16 @@ public class GameManagerImpl implements GameManager {
     private final ItemDAO itemDAO;
     private final InventoryDAO inventoryDAO;
     private final PurchaseDAO purchaseDAO;
+    private final EventDAO eventDAO;
+    private final EventRegistrationDAO eventRegistrationDAO;
 
     private GameManagerImpl() {
         this.userDAO = new UserDAOImpl();
         this.itemDAO = new ItemDAOImpl();
         this.inventoryDAO = new InventoryDAOImpl();
         this.purchaseDAO = new PurchaseDAOImpl();
+        this.eventDAO = new EventDAOImpl();
+        this.eventRegistrationDAO = new EventRegistrationDAOImpl();
         addInitialDataIfNeeded();
     }
 
@@ -48,8 +58,10 @@ public class GameManagerImpl implements GameManager {
     @Override
     public void clear() {
         logger.info("clear database data");
+        eventRegistrationDAO.clear();
         purchaseDAO.clear();
         inventoryDAO.clear();
+        eventDAO.clear();
         itemDAO.clear();
         userDAO.clear();
         logger.info("clear completed");
@@ -194,6 +206,48 @@ public class GameManagerImpl implements GameManager {
         return userDAO.getUsers();
     }
 
+    @Override
+    public List<GameEvent> getEvents() {
+        return eventDAO.getEvents();
+    }
+
+    @Override
+    public GameEvent getEvent(int eventId) {
+        GameEvent event = eventDAO.getEvent(eventId);
+        if (event == null) {
+            throw new NoSuchElementException("No existe ningun evento con ese id");
+        }
+        return event;
+    }
+
+    @Override
+    public EventRegistration registerToEvent(int eventId, int userId, String username) {
+        ensureUserExists(userId);
+
+        GameEvent event = eventDAO.getEvent(eventId);
+        if (event == null) {
+            throw new NoSuchElementException("No existe ningun evento con ese id");
+        }
+
+        if (isBlank(username)) {
+            throw new IllegalArgumentException("Username invalido");
+        }
+
+        if (eventRegistrationDAO.existsRegistration(eventId, userId)) {
+            throw new IllegalStateException("El usuario ya esta inscrito en este evento");
+        }
+
+        EventRegistration registration = new EventRegistration(
+                0,
+                eventId,
+                userId,
+                username,
+                Instant.now().toString()
+        );
+
+        return eventRegistrationDAO.addRegistration(registration);
+    }
+
     private void addInitialDataIfNeeded() {
         if (itemDAO.isEmpty()) {
             addItem(new Item(101, "Espada de madera", "Una espada basica", "WEAPON", 10.0, true, "wood_sword"));
@@ -204,6 +258,35 @@ public class GameManagerImpl implements GameManager {
         if (userDAO.isEmpty()) {
             registerUser(new User(101, "admin", "admin", "admin@tower.com", 1000.0, "ADMIN", 10));
             registerUser(new User(102, "user1", "user1", "user@mail.com", 50.0, "PLAYER", 1));
+        }
+
+        if (eventDAO.isEmpty()) {
+            eventDAO.addEvent(new GameEvent(
+                    1,
+                    "Torneo de Torres",
+                    "Compite durante tres dias y consigue puntos extra para tu equipo.",
+                    "https://cdn.pixabay.com/photo/2016/11/29/05/08/adventure-1868817_1280.jpg",
+                    "2026-06-02",
+                    "2026-06-05"
+            ));
+
+            eventDAO.addEvent(new GameEvent(
+                    2,
+                    "Defensa Nocturna",
+                    "Evento especial con oleadas mas dificiles y recompensas exclusivas.",
+                    "https://cdn.pixabay.com/photo/2016/10/30/05/43/castle-1781648_1280.jpg",
+                    "2026-06-06",
+                    "2026-06-08"
+            ));
+
+            eventDAO.addEvent(new GameEvent(
+                    3,
+                    "Reto Cooperativo",
+                    "Un desafio para jugadores que quieran coordinarse con su equipo.",
+                    "https://cdn.pixabay.com/photo/2017/08/30/01/05/fantasy-2696946_1280.jpg",
+                    "2026-06-10",
+                    "2026-06-12"
+            ));
         }
     }
 

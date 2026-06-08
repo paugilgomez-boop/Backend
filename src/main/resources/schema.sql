@@ -41,3 +41,22 @@ CREATE TABLE IF NOT EXISTS Purchase (
     CONSTRAINT fk_purchase_user FOREIGN KEY (userId) REFERENCES User(id) ON DELETE CASCADE,
     CONSTRAINT fk_purchase_item FOREIGN KEY (itemId) REFERENCES Item(id) ON DELETE CASCADE
 );
+
+CREATE TABLE IF NOT EXISTS GameEvent (
+    id INT AUTO_INCREMENT PRIMARY KEY,
+    name VARCHAR(120) NOT NULL,
+    description VARCHAR(255),
+    image VARCHAR(255),
+    startDate VARCHAR(64) NOT NULL,
+    endDate VARCHAR(64) NOT NULL
+);
+
+CREATE TABLE IF NOT EXISTS EventRegistration (
+    id INT AUTO_INCREMENT PRIMARY KEY,
+    eventId INT NOT NULL,
+    userId INT NOT NULL,
+    username VARCHAR(100) NOT NULL,
+    date VARCHAR(64) NOT NULL,
+    CONSTRAINT fk_event_registration_event FOREIGN KEY (eventId) REFERENCES GameEvent(id) ON DELETE CASCADE,
+    CONSTRAINT fk_event_registration_user FOREIGN KEY (userId) REFERENCES User(id) ON DELETE CASCADE
+);

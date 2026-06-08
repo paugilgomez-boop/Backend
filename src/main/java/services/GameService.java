@@ -8,9 +8,11 @@ import models.Inventory;
 import models.Item;
 import models.Purchase;
 import models.User;
+import models.GameEvent;
 import repositories.GameManager;
 import repositories.GameManagerImpl;
 import requests.BuyItemRequest;
+import requests.EventRegistrationRequest;
 import requests.ItemRequest;
 import requests.LoginRequest;
 import requests.RegisterRequest;
@@ -224,6 +226,57 @@ public class GameService {
             return Response.status(200).entity(entity).build();
         } catch (NoSuchElementException e) {
             return Response.status(404).entity(e.getMessage()).build();
+        }
+    }
+
+    @GET
+    @Path("/events")
+    @Produces(MediaType.APPLICATION_JSON)
+    @ApiOperation(value = "Listado de eventos")
+    @ApiResponses(value = {
+            @ApiResponse(code = 200, message = "Consulta correcta", response = GameEvent.class, responseContainer = "List")
+    })
+    public Response getEvents() {
+        System.out.println("[MINIM2-EJ4] GET /game/events called");
+
+        List<GameEvent> events = gm.getEvents();
+        GenericEntity<List<GameEvent>> entity = new GenericEntity<List<GameEvent>>(events) {};
+        return Response.status(200).entity(entity).build();
+    }
+
+    @POST
+    @Path("/events/{eventId}/register")
+    @Consumes(MediaType.APPLICATION_JSON)
+    @Produces(MediaType.APPLICATION_JSON)
+    @ApiOperation(value = "Registrarse en un evento")
+    @ApiResponses(value = {
+            @ApiResponse(code = 200, message = "Usuario registrado en el evento"),
+            @ApiResponse(code = 400, message = "Datos invalidos"),
+            @ApiResponse(code = 404, message = "Usuario o evento no encontrado"),
+            @ApiResponse(code = 409, message = "Usuario ya inscrito")
+    })
+    public Response registerToEvent(@PathParam("eventId") int eventId, EventRegistrationRequest request) {
+        System.out.println("[MINIM2-EJ4] POST /game/events/" + eventId + "/register called");
+
+        if (request == null) {
+            return Response.status(400).entity("Datos de registro invalidos").build();
+        }
+
+        try {
+            System.out.println("[MINIM2-EJ4] userId=" + request.getUserId()
+                    + ", username=" + request.getUsername()
+                    + ", eventId=" + eventId);
+
+            return Response.status(200)
+                    .entity(gm.registerToEvent(eventId, request.getUserId(), request.getUsername()))
+                    .build();
+
+        } catch (NoSuchElementException e) {
+            return Response.status(404).entity(e.getMessage()).build();
+        } catch (IllegalStateException e) {
+            return Response.status(409).entity(e.getMessage()).build();
+        } catch (IllegalArgumentException e) {
+            return Response.status(400).entity(e.getMessage()).build();
         }
     }
 

@@ -4,6 +4,8 @@ import models.Inventory;
 import models.Item;
 import models.Purchase;
 import models.User;
+import models.GameEvent;
+import models.EventRegistration;
 
 import java.util.List;
 
@@ -32,6 +34,12 @@ public interface GameManager {
     User getUser(int userId);
 
     List<User> getAllUsers();
+
+    List<GameEvent> getEvents();
+
+    GameEvent getEvent(int eventId);
+
+    EventRegistration registerToEvent(int eventId, int userId, String username);
 
     void clear();
 }
