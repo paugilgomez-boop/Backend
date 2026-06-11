@@ -9,6 +9,8 @@ import models.Item;
 import models.Purchase;
 import models.User;
 import models.GameEvent;
+import models.TeamMember;
+import models.TeamResponse;
 import repositories.GameManager;
 import repositories.GameManagerImpl;
 import requests.BuyItemRequest;
@@ -298,6 +300,25 @@ public class GameService {
         } catch (IllegalArgumentException e) {
             return Response.status(400).entity(e.getMessage()).build();
         }
+    }
+
+    @GET
+    @Path("/user/{username}/team")
+    @Produces(MediaType.APPLICATION_JSON)
+    @ApiOperation(value = "Obtener el equipo y miembros de un usuario")
+    @ApiResponses(value = {
+            @ApiResponse(code = 200, message = "Consulta correcta", response = TeamResponse.class)
+    })
+    public Response getUserTeam(@PathParam("username") String username) {
+        System.out.println("[MINIM2] GET /game/user/" + username + "/team called");
+        
+        java.util.List<TeamMember> members = new java.util.ArrayList<>();
+        members.add(new TeamMember("Juan", "https://cdn.pixabay.com/photo/2017/07/11/15/51/kermit-2499379_1280.png", 250));
+        members.add(new TeamMember("Palomo", "https://cdn.pixabay.com/photo/2016/03/31/19/58/avatar-1295397_1280.png", 200));
+        members.add(new TeamMember("Sergi", "https://cdn.pixabay.com/photo/2015/04/23/22/00/tree-736885_1280.jpg", 150));
+        
+        TeamResponse response = new TeamResponse("porxinos", members);
+        return Response.status(200).entity(response).build();
     }
 
     private Item toItem(ItemRequest request) {
