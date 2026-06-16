@@ -6,6 +6,7 @@ import models.Purchase;
 import models.User;
 import models.GameEvent;
 import models.EventRegistration;
+import models.TeamResponse;
 
 import java.util.List;
 
@@ -42,6 +43,8 @@ public interface GameManager {
     GameEvent getEvent(int eventId);
 
     EventRegistration registerToEvent(int eventId, int userId, String username);
+
+    TeamResponse getUserTeam(String username);
 
     void clear();
 }

@@ -60,3 +60,11 @@ CREATE TABLE IF NOT EXISTS EventRegistration (
     CONSTRAINT fk_event_registration_event FOREIGN KEY (eventId) REFERENCES GameEvent(id) ON DELETE CASCADE,
     CONSTRAINT fk_event_registration_user FOREIGN KEY (userId) REFERENCES User(id) ON DELETE CASCADE
 );
+
+CREATE TABLE IF NOT EXISTS TeamMember (
+    id INT AUTO_INCREMENT PRIMARY KEY,
+    team VARCHAR(100) NOT NULL,
+    name VARCHAR(100) NOT NULL,
+    avatar VARCHAR(255),
+    points INT NOT NULL DEFAULT 0
+);

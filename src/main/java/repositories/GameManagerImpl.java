@@ -6,6 +6,8 @@ import models.Purchase;
 import models.User;
 import models.GameEvent;
 import models.EventRegistration;
+import models.TeamMember;
+import models.TeamResponse;
 import orm.FactorySession;
 import orm.Session;
 import orm.dao.EventDAO;
@@ -18,6 +20,8 @@ import orm.dao.ItemDAO;
 import orm.dao.ItemDAOImpl;
 import orm.dao.PurchaseDAO;
 import orm.dao.PurchaseDAOImpl;
+import orm.dao.TeamMemberDAO;
+import orm.dao.TeamMemberDAOImpl;
 import orm.dao.UserDAO;
 import orm.dao.UserDAOImpl;
 import org.apache.log4j.Logger;
@@ -38,6 +42,7 @@ public class GameManagerImpl implements GameManager {
     private final PurchaseDAO purchaseDAO;
     private final EventDAO eventDAO;
     private final EventRegistrationDAO eventRegistrationDAO;
+    private final TeamMemberDAO teamMemberDAO;
 
     private GameManagerImpl() {
         this.userDAO = new UserDAOImpl();
@@ -46,6 +51,7 @@ public class GameManagerImpl implements GameManager {
         this.purchaseDAO = new PurchaseDAOImpl();
         this.eventDAO = new EventDAOImpl();
         this.eventRegistrationDAO = new EventRegistrationDAOImpl();
+        this.teamMemberDAO = new TeamMemberDAOImpl();
         addInitialDataIfNeeded();
     }
 
@@ -60,6 +66,7 @@ public class GameManagerImpl implements GameManager {
     public void clear() {
         logger.info("clear database data");
         eventRegistrationDAO.clear();
+        teamMemberDAO.clear();
         purchaseDAO.clear();
         inventoryDAO.clear();
         eventDAO.clear();
@@ -304,6 +311,17 @@ public class GameManagerImpl implements GameManager {
         return eventRegistrationDAO.addRegistration(registration);
     }
 
+    @Override
+    public TeamResponse getUserTeam(String username) {
+        if (isBlank(username)) {
+            throw new IllegalArgumentException("Username invalido");
+        }
+
+        String team = "porxinos";
+        List<TeamMember> members = teamMemberDAO.getMembersByTeam(team);
+        return new TeamResponse(team, members);
+    }
+
     private void addInitialDataIfNeeded() {
         if (itemDAO.isEmpty()) {
             addItem(new Item(1, "Refuerzo de Muralla", "Aumenta la vida de la base", "ARMOR", 100.0, true, "wall_upgrade.png"));
@@ -344,6 +362,30 @@ public class GameManagerImpl implements GameManager {
                     "https://cdn.pixabay.com/photo/2017/08/30/01/05/fantasy-2696946_1280.jpg",
                     "2026-06-10",
                     "2026-06-12"
+            ));
+        }
+
+        if (teamMemberDAO.isEmpty()) {
+            teamMemberDAO.addTeamMember(new TeamMember(
+                    1,
+                    "porxinos",
+                    "Juan",
+                    "https://cdn.pixabay.com/photo/2017/07/11/15/51/kermit-2499379_1280.png",
+                    250
+            ));
+            teamMemberDAO.addTeamMember(new TeamMember(
+                    2,
+                    "porxinos",
+                    "Palomo",
+                    "https://cdn.pixabay.com/photo/2016/03/31/19/58/avatar-1295397_1280.png",
+                    200
+            ));
+            teamMemberDAO.addTeamMember(new TeamMember(
+                    3,
+                    "porxinos",
+                    "Sergi",
+                    "https://cdn.pixabay.com/photo/2015/04/23/22/00/tree-736885_1280.jpg",
+                    150
             ));
         }
     }
