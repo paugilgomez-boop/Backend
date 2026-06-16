@@ -27,6 +27,7 @@ import orm.dao.UserDAOImpl;
 import org.apache.log4j.Logger;
 
 import java.time.Instant;
+import java.util.ArrayList;
 import java.util.HashMap;
 import java.util.List;
 import java.util.NoSuchElementException;
@@ -309,6 +310,23 @@ public class GameManagerImpl implements GameManager {
         );
 
         return eventRegistrationDAO.addRegistration(registration);
+    }
+
+    @Override
+    public List<User> getUsersByEvent(int eventId) {
+        getEvent(eventId);
+
+        List<EventRegistration> registrations = eventRegistrationDAO.getRegistrationsByEvent(eventId);
+        List<User> users = new ArrayList<>();
+
+        for (EventRegistration registration : registrations) {
+            User user = userDAO.getUser(registration.getUserId());
+            if (user != null) {
+                users.add(user);
+            }
+        }
+
+        return users;
     }
 
     @Override

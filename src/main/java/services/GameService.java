@@ -302,6 +302,24 @@ public class GameService {
     }
 
     @GET
+    @Path("/events/{eventId}/users")
+    @Produces(MediaType.APPLICATION_JSON)
+    @ApiOperation(value = "Listado de usuarios inscritos en un evento")
+    @ApiResponses(value = {
+            @ApiResponse(code = 200, message = "Consulta correcta", response = User.class, responseContainer = "List"),
+            @ApiResponse(code = 404, message = "Evento no encontrado")
+    })
+    public Response getUsersByEvent(@PathParam("eventId") int eventId) {
+        try {
+            List<User> users = gm.getUsersByEvent(eventId);
+            GenericEntity<List<User>> entity = new GenericEntity<List<User>>(users) {};
+            return Response.status(200).entity(entity).build();
+        } catch (NoSuchElementException e) {
+            return Response.status(404).entity(e.getMessage()).build();
+        }
+    }
+
+    @GET
     @Path("/user/{username}/team")
     @Produces(MediaType.APPLICATION_JSON)
     @ApiOperation(value = "Obtener el equipo y miembros de un usuario")

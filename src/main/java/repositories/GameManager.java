@@ -44,6 +44,8 @@ public interface GameManager {
 
     EventRegistration registerToEvent(int eventId, int userId, String username);
 
+    List<User> getUsersByEvent(int eventId);
+
     TeamResponse getUserTeam(String username);
 
     void clear();
