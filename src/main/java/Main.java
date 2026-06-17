@@ -1,59 +1,118 @@
 import io.swagger.jaxrs.config.BeanConfig;
+import java.io.File;
+import java.io.IOException;
+import java.net.BindException;
+import java.net.URI;
 import org.apache.log4j.Logger;
 import org.glassfish.grizzly.http.server.HttpServer;
 import org.glassfish.grizzly.http.server.StaticHttpHandler;
 import org.glassfish.jersey.grizzly2.httpserver.GrizzlyHttpServerFactory;
 import org.glassfish.jersey.server.ResourceConfig;
+import services.FaqAssistantClient;
 import services.GameService;
 
-import java.io.IOException;
-import java.net.URI;
-import java.io.File;
-
 public class Main {
-    public static final String BASE_URI = "http://0.0.0.0:8080/dsaApp/";
-    final static Logger logger = Logger.getLogger(Main.class);
+  private static final String BIND_HOST = config("server.bindHost", "SERVER_BIND_HOST", "0.0.0.0");
+  private static final String BIND_PORT = config("server.port", "SERVER_PORT", "8080");
+  public static final String PUBLIC_HOST =
+      config("server.publicHost", "SERVER_PUBLIC_HOST", "dsa3.upc.edu");
+  public static final String BASE_URI =
+      "http://" + BIND_HOST + ":" + BIND_PORT + "/dsaApp/";
 
-    public static HttpServer startServer() {
-        final ResourceConfig rc = new ResourceConfig()
-                .register(GameService.class)
-                .register(MyExceptionMapper.class)
-                .register(io.swagger.jaxrs.listing.ApiListingResource.class)
-                .register(io.swagger.jaxrs.listing.SwaggerSerializers.class);
+  final static Logger logger = Logger.getLogger(Main.class);
 
-        BeanConfig beanConfig = new BeanConfig();
-        beanConfig.setHost("localhost:8080");
-        beanConfig.setBasePath("/dsaApp");
-        beanConfig.setResourcePackage("services");
-        beanConfig.setScan(true);
+  private static BindException findBindException(Throwable error) {
+    Throwable current = error;
+    while (current != null) {
+      if (current instanceof BindException) {
+        return (BindException) current;
+      }
+      current = current.getCause();
+    }
+    return null;
+  }
 
-        // Creamos el servidor pero NO lo arrancamos aún (start=false)
-        return GrizzlyHttpServerFactory.createHttpServer(URI.create(BASE_URI), rc, false);
+  private static String config(String systemProperty, String envVar, String defaultValue) {
+    String value = System.getProperty(systemProperty);
+    if (value == null || value.isEmpty()) {
+      value = System.getenv(envVar);
+    }
+    if (value == null || value.isEmpty()) {
+      return defaultValue;
+    }
+    return value;
+  }
+
+  public static HttpServer startServer() {
+    final ResourceConfig rc =
+        new ResourceConfig()
+            .register(GameService.class)
+            .register(MyExceptionMapper.class)
+            .register(io.swagger.jaxrs.listing.ApiListingResource.class)
+            .register(io.swagger.jaxrs.listing.SwaggerSerializers.class);
+
+    BeanConfig beanConfig = new BeanConfig();
+    beanConfig.setHost(PUBLIC_HOST);
+    beanConfig.setBasePath("/dsaApp");
+    beanConfig.setResourcePackage("services");
+    beanConfig.setScan(true);
+
+    return GrizzlyHttpServerFactory.createHttpServer(URI.create(BASE_URI), rc, false);
+  }
+
+  public static void main(String[] args) throws IOException {
+
+    logger.info("Binding REST API to " + BASE_URI);
+
+    final HttpServer server = startServer();
+
+    File publicFolder = new File("public");
+    logger.info("Configuring static handler for: " + publicFolder.getAbsolutePath());
+
+    if (!publicFolder.exists()) {
+      logger.error("WARNING: 'public' folder NOT FOUND at " + publicFolder.getAbsolutePath());
     }
 
-    public static void main(String[] args) throws IOException {
-        final HttpServer server = startServer();
+    StaticHttpHandler staticHttpHandler = new StaticHttpHandler("public");
+    server.getServerConfiguration().addHttpHandler(staticHttpHandler, "/");
 
-        // Verificamos la ruta de la carpeta public para debug
-        File publicFolder = new File("public");
-        logger.info("Configuring static handler for: " + publicFolder.getAbsolutePath());
-        
-        if (!publicFolder.exists()) {
-            logger.error("WARNING: 'public' folder NOT FOUND at " + publicFolder.getAbsolutePath());
-        }
-
-        // Añadimos el handler de estáticos en la raíz
-        StaticHttpHandler staticHttpHandler = new StaticHttpHandler("public");
-        server.getServerConfiguration().addHttpHandler(staticHttpHandler, "/");
-
-        // Arrancamos el servidor manualmente
-        server.start();
-
-        logger.info("REST server started at " + BASE_URI.replace("0.0.0.0", "localhost"));
-        logger.info("Web interface available at http://localhost:8080/login.html");
-        
-        System.out.println("Press enter to stop the server...");
-        System.in.read();
-        server.stop();
+    try {
+      server.start();
+    } catch (Exception e) {
+      BindException bindError = findBindException(e);
+      if (bindError != null) {
+        logger.error(
+            "No se pudo enlazar " + BIND_HOST + ":" + BIND_PORT + " -> " + bindError.getMessage());
+        logger.error("Comprueba si el puerto esta ocupado: ss -tlnp | grep " + BIND_PORT);
+        logger.error("Si hay otro java, paralo: kill <PID>");
+        logger.error("O arranca en otro puerto: SERVER_PORT=8081 ./start_server.sh");
+      }
+      if (e instanceof IOException) {
+        throw (IOException) e;
+      }
+      if (e instanceof RuntimeException) {
+        throw (RuntimeException) e;
+      }
+      throw new RuntimeException(e);
     }
+
+    logger.info("REST API listening on " + BASE_URI);
+    logger.info("Public host (Swagger/clients): " + PUBLIC_HOST);
+    logger.info("Web: http://" + PUBLIC_HOST + ":" + BIND_PORT + "/login.html");
+    logger.info("API: http://" + PUBLIC_HOST + ":" + BIND_PORT + "/dsaApp/game");
+
+    FaqAssistantClient faqClient = new FaqAssistantClient();
+    logger.info("LLM config url=" + faqClient.getLlmUrl() + " model=" + faqClient.getLlmModel());
+    try {
+        String ping = faqClient.testConnection();
+        logger.info("Ollama OK: " + ping);
+    } catch (IOException e) {
+        logger.error("Ollama NO disponible desde Java: " + e.getMessage());
+        logger.error("Comprueba en el servidor: echo $LLM_URL && curl http://127.0.0.1:11434/api/tags");
+    }
+
+    System.out.println("Press enter to stop the server...");
+    System.in.read();
+    server.stop();
+  }
 }

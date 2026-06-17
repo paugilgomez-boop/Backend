@@ -14,9 +14,12 @@ import repositories.GameManager;
 import repositories.GameManagerImpl;
 import requests.BuyItemRequest;
 import requests.EventRegistrationRequest;
+import requests.FaqAssistantRequest;
 import requests.ItemRequest;
 import requests.LoginRequest;
 import requests.RegisterRequest;
+
+import responses.FaqAssistantResponse;
 
 import javax.ws.rs.Consumes;
 import javax.ws.rs.DELETE;
@@ -29,6 +32,7 @@ import javax.ws.rs.Produces;
 import javax.ws.rs.core.GenericEntity;
 import javax.ws.rs.core.MediaType;
 import javax.ws.rs.core.Response;
+import java.io.IOException;
 import java.util.List;
 import java.util.NoSuchElementException;
 
@@ -37,9 +41,11 @@ import java.util.NoSuchElementException;
 public class GameService {
 
     private final GameManager gm;
+    private final FaqAssistantClient faqAssistantClient;
 
     public GameService() {
         this.gm = GameManagerImpl.getInstance();
+        this.faqAssistantClient = new FaqAssistantClient();
     }
 
     @POST
@@ -334,6 +340,35 @@ public class GameService {
             return Response.status(200).entity(gm.getUserTeam(username)).build();
         } catch (IllegalArgumentException e) {
             return Response.status(400).entity(e.getMessage()).build();
+        }
+    }
+
+    @POST
+    @Path("/assistant/faq")
+    @Consumes(MediaType.APPLICATION_JSON)
+    @Produces(MediaType.APPLICATION_JSON)
+    @ApiOperation(value = "Consultar al asistente FAQ del juego")
+    @ApiResponses(value = {
+            @ApiResponse(code = 200, message = "Respuesta generada", response = FaqAssistantResponse.class),
+            @ApiResponse(code = 400, message = "Pregunta no procesable"),
+            @ApiResponse(code = 502, message = "Asistente no disponible temporalmente")
+    })
+    public Response askFaqAssistant(FaqAssistantRequest request) {
+        if (request == null || request.getQuestion() == null || request.getQuestion().trim().isEmpty()) {
+            return Response.status(400).entity("Pregunta no procesable").build();
+        }
+
+        String question = request.getQuestion().trim();
+        try {
+            String answer = faqAssistantClient.askFaqAssistant(question);
+            if (answer == null || answer.trim().isEmpty()) {
+                return Response.status(502).entity("Asistente no disponible temporalmente").build();
+            }
+            return Response.status(200).entity(new FaqAssistantResponse(question, answer)).build();
+        } catch (Exception e) {
+            System.err.println("[FAQ] Error llamando al asistente: " + e.getMessage());
+            e.printStackTrace(System.err);
+            return Response.status(502).entity("Asistente no disponible temporalmente").build();
         }
     }
 
