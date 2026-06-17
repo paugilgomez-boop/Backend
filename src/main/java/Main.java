@@ -11,7 +11,7 @@ import java.net.URI;
 import java.io.File;
 
 public class Main {
-    public static final String BASE_URI = "http://0.0.0.0:8080/dsaApp/";
+    public static final String BASE_URI = "http://192.168.10.24:8080/dsaApp/";
     final static Logger logger = Logger.getLogger(Main.class);
 
     public static HttpServer startServer() {
@@ -22,7 +22,7 @@ public class Main {
                 .register(io.swagger.jaxrs.listing.SwaggerSerializers.class);
 
         BeanConfig beanConfig = new BeanConfig();
-        beanConfig.setHost("localhost:8080");
+        beanConfig.setHost("dsa3.upc.edu");
         beanConfig.setBasePath("/dsaApp");
         beanConfig.setResourcePackage("services");
         beanConfig.setScan(true);
