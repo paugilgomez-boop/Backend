@@ -48,5 +48,13 @@ public interface GameManager {
 
     TeamResponse getUserTeam(String username);
 
+    List<models.Team> getTeamsRanking();
+
+    models.Team joinTeam(String teamName, String username);
+
+    models.TeamInfoResponse getMyTeamInfo(String username);
+
+    void leaveTeam(String username);
+
     void clear();
 }

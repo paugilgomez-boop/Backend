@@ -47,6 +47,7 @@ public class Main {
     final ResourceConfig rc =
         new ResourceConfig()
             .register(GameService.class)
+            .register(services.TeamService.class)
             .register(MyExceptionMapper.class)
             .register(io.swagger.jaxrs.listing.ApiListingResource.class)
             .register(io.swagger.jaxrs.listing.SwaggerSerializers.class);

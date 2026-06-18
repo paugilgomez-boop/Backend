@@ -8,6 +8,8 @@ import models.GameEvent;
 import models.EventRegistration;
 import models.TeamMember;
 import models.TeamResponse;
+import models.Team;
+import models.TeamInfoResponse;
 import orm.FactorySession;
 import orm.Session;
 import orm.dao.EventDAO;
@@ -335,10 +337,132 @@ public class GameManagerImpl implements GameManager {
             throw new IllegalArgumentException("Username invalido");
         }
 
-        String team = "porxinos";
+        TeamMember member = teamMemberDAO.getMemberByName(username);
+        String team = (member != null) ? member.getTeam() : "porxinos";
         List<TeamMember> members = teamMemberDAO.getMembersByTeam(team);
         return new TeamResponse(team, members);
     }
+
+    @Override
+    public List<Team> getTeamsRanking() {
+        List<TeamMember> allMembers = teamMemberDAO.getAllMembers();
+        java.util.Map<String, Team> teamMap = new java.util.HashMap<>();
+        
+        for (TeamMember m : allMembers) {
+            String teamName = m.getTeam();
+            if (isBlank(teamName)) continue;
+            
+            Team team = teamMap.get(teamName);
+            if (team == null) {
+                team = new Team(teamName, m.getAvatar(), 0);
+                teamMap.put(teamName, team);
+            }
+            team.setPoints(team.getPoints() + m.getPoints());
+        }
+        
+        // Ensure default teams are present in ranking
+        String[] defaultTeams = {"porxinos", "aniquiladores", "saiyans", "troncos"};
+        for (String tName : defaultTeams) {
+            if (!teamMap.containsKey(tName)) {
+                teamMap.put(tName, new Team(tName, "https://cdn.pixabay.com/photo/2016/03/31/19/58/avatar-1295397_1280.png", 0));
+            }
+        }
+        
+        List<Team> ranking = new java.util.ArrayList<>(teamMap.values());
+        ranking.sort((t1, t2) -> Integer.compare(t2.getPoints(), t1.getPoints()));
+        return ranking;
+    }
+
+    @Override
+    public Team joinTeam(String teamName, String username) {
+        if (isBlank(teamName) || isBlank(username)) {
+            throw new IllegalArgumentException("Parametros invalidos");
+        }
+        
+        User user = userDAO.getUserByUsername(username);
+        if (user == null) {
+            throw new java.util.NoSuchElementException("No existe el usuario " + username);
+        }
+        
+        TeamMember member = teamMemberDAO.getMemberByName(username);
+        if (member != null) {
+            Session session = null;
+            try {
+                session = FactorySession.openSession();
+                session.beginTransaction();
+                TeamMember dbMember = (TeamMember) session.get(TeamMember.class, member.getId());
+                if (dbMember != null) {
+                    dbMember.setTeam(teamName);
+                    session.update(dbMember);
+                } else {
+                    session.update(member);
+                }
+                session.commit();
+            } catch (RuntimeException e) {
+                if (session != null) session.rollback();
+                throw e;
+            } finally {
+                if (session != null) session.close();
+            }
+        } else {
+            String avatar = "https://cdn.pixabay.com/photo/2016/03/31/19/58/avatar-1295397_1280.png";
+            TeamMember newMember = new TeamMember(0, teamName, username, avatar, 0);
+            teamMemberDAO.addTeamMember(newMember);
+        }
+        
+        List<Team> ranking = getTeamsRanking();
+        for (Team t : ranking) {
+            if (t.getName().equals(teamName)) {
+                return t;
+            }
+        }
+        return new Team(teamName, "https://cdn.pixabay.com/photo/2016/03/31/19/58/avatar-1295397_1280.png", 0);
+    }
+
+    @Override
+    public TeamInfoResponse getMyTeamInfo(String username) {
+        if (isBlank(username)) {
+            throw new IllegalArgumentException("Username invalido");
+        }
+        
+        TeamMember member = teamMemberDAO.getMemberByName(username);
+        if (member == null) {
+            throw new java.util.NoSuchElementException("El usuario no pertenece a ningun equipo");
+        }
+        
+        String teamName = member.getTeam();
+        List<TeamMember> members = teamMemberDAO.getMembersByTeam(teamName);
+        return new TeamInfoResponse(teamName, members);
+    }
+
+    @Override
+    public void leaveTeam(String username) {
+        if (isBlank(username)) {
+            throw new IllegalArgumentException("Username invalido");
+        }
+        
+        TeamMember member = teamMemberDAO.getMemberByName(username);
+        if (member == null) {
+            throw new java.util.NoSuchElementException("El usuario no pertenece a ningun equipo");
+        }
+        
+        Session session = null;
+        try {
+            session = FactorySession.openSession();
+            session.beginTransaction();
+            TeamMember dbMember = (TeamMember) session.get(TeamMember.class, member.getId());
+            if (dbMember != null) {
+                session.delete(dbMember);
+            }
+            session.commit();
+        } catch (RuntimeException e) {
+            if (session != null) session.rollback();
+            throw e;
+        } finally {
+            if (session != null) session.close();
+        }
+    }
+
 
     private void addInitialDataIfNeeded() {
         if (itemDAO.isEmpty()) {
