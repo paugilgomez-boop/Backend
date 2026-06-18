@@ -9,6 +9,7 @@ import org.glassfish.grizzly.http.server.StaticHttpHandler;
 import org.glassfish.jersey.grizzly2.httpserver.GrizzlyHttpServerFactory;
 import org.glassfish.jersey.server.ResourceConfig;
 import services.FaqAssistantClient;
+import services.ForumService;
 import services.GameService;
 
 public class Main {
@@ -48,6 +49,7 @@ public class Main {
         new ResourceConfig()
             .register(GameService.class)
             .register(services.TeamService.class)
+            .register(ForumService.class)
             .register(MyExceptionMapper.class)
             .register(io.swagger.jaxrs.listing.ApiListingResource.class)
             .register(io.swagger.jaxrs.listing.SwaggerSerializers.class);

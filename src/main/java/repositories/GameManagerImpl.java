@@ -22,6 +22,8 @@ import orm.dao.ItemDAO;
 import orm.dao.ItemDAOImpl;
 import orm.dao.PurchaseDAO;
 import orm.dao.PurchaseDAOImpl;
+import orm.dao.ForumTopicDAO;
+import orm.dao.ForumTopicDAOImpl;
 import orm.dao.TeamMemberDAO;
 import orm.dao.TeamMemberDAOImpl;
 import orm.dao.UserDAO;
@@ -46,6 +48,7 @@ public class GameManagerImpl implements GameManager {
     private final EventDAO eventDAO;
     private final EventRegistrationDAO eventRegistrationDAO;
     private final TeamMemberDAO teamMemberDAO;
+    private final ForumTopicDAO forumTopicDAO;
 
     private GameManagerImpl() {
         this.userDAO = new UserDAOImpl();
@@ -55,6 +58,7 @@ public class GameManagerImpl implements GameManager {
         this.eventDAO = new EventDAOImpl();
         this.eventRegistrationDAO = new EventRegistrationDAOImpl();
         this.teamMemberDAO = new TeamMemberDAOImpl();
+        this.forumTopicDAO = new ForumTopicDAOImpl();
         addInitialDataIfNeeded();
     }
 
@@ -529,6 +533,21 @@ public class GameManagerImpl implements GameManager {
                     "https://cdn.pixabay.com/photo/2015/04/23/22/00/tree-736885_1280.jpg",
                     150
             ));
+        }
+
+        if (forumTopicDAO.isEmpty()) {
+            forumTopicDAO.addTopic(new models.ForumTopic(
+                    0, "Estrategias de defensa",
+                    "Comparte tus mejores tácticas para aguantar oleadas difíciles.",
+                    "admin", Instant.now().toString(), 0));
+            forumTopicDAO.addTopic(new models.ForumTopic(
+                    0, "Guía para principiantes",
+                    "Todo lo que necesitas saber para empezar a jugar.",
+                    "admin", Instant.now().toString(), 0));
+            forumTopicDAO.addTopic(new models.ForumTopic(
+                    0, "Mejores objetos de la tienda",
+                    "¿Cuál es el objeto más útil? Debate aquí.",
+                    "admin", Instant.now().toString(), 0));
         }
     }
 
