@@ -17,6 +17,7 @@ import requests.EventRegistrationRequest;
 import requests.ItemRequest;
 import requests.LoginRequest;
 import requests.RegisterRequest;
+import responses.EventUserResponse;
 
 import javax.ws.rs.Consumes;
 import javax.ws.rs.DELETE;
@@ -306,13 +307,16 @@ public class GameService {
     @Produces(MediaType.APPLICATION_JSON)
     @ApiOperation(value = "Listado de usuarios inscritos en un evento")
     @ApiResponses(value = {
-            @ApiResponse(code = 200, message = "Consulta correcta", response = User.class, responseContainer = "List"),
+            @ApiResponse(code = 200, message = "Consulta correcta", response = EventUserResponse.class, responseContainer = "List"),
             @ApiResponse(code = 404, message = "Evento no encontrado")
     })
     public Response getUsersByEvent(@PathParam("eventId") int eventId) {
         try {
             List<User> users = gm.getUsersByEvent(eventId);
-            GenericEntity<List<User>> entity = new GenericEntity<List<User>>(users) {};
+            List<EventUserResponse> eventUsers = users.stream()
+                    .map(this::toEventUserResponse)
+                    .collect(java.util.stream.Collectors.toList());
+            GenericEntity<List<EventUserResponse>> entity = new GenericEntity<List<EventUserResponse>>(eventUsers) {};
             return Response.status(200).entity(entity).build();
         } catch (NoSuchElementException e) {
             return Response.status(404).entity(e.getMessage()).build();
@@ -353,5 +357,12 @@ public class GameService {
             return request.getRole();
         }
         return "PLAYER";
+    }
+
+    private EventUserResponse toEventUserResponse(User user) {
+        String nombre = user.getUsername();
+        String apellidos = user.getEmail() != null ? user.getEmail() : "";
+        String imagen = "https://cdn.pixabay.com/photo/2016/03/31/19/58/avatar-1295397_1280.png";
+        return new EventUserResponse(nombre, apellidos, imagen);
     }
 }
