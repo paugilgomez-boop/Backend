@@ -2,25 +2,18 @@ package services;
 
 import org.apache.log4j.Logger;
 
-import java.io.BufferedReader;
+import java.io.ByteArrayOutputStream;
 import java.io.IOException;
 import java.io.InputStream;
-import java.io.InputStreamReader;
 import java.io.OutputStream;
 import java.net.HttpURLConnection;
 import java.net.URL;
 import java.nio.charset.StandardCharsets;
-import java.util.regex.Matcher;
-import java.util.regex.Pattern;
 
 public class FaqAssistantClient {
     final static Logger logger = Logger.getLogger(FaqAssistantClient.class);
 
-    private static final Pattern RESPONSE_PATTERN =
-            Pattern.compile("\"response\"\\s*:\\s*\"((?:\\\\.|[^\\\\\"])*)\"");
-
-    private static String config(String systemProperty, String envVar, String defaultValue) {
-        String value = System.getProperty(systemProperty);
+    private static String config(String systemProperty, String envVar, String defaultValue) {        String value = System.getProperty(systemProperty);
         if (value == null || value.isEmpty()) {
             value = System.getenv(envVar);
         }
@@ -31,7 +24,7 @@ public class FaqAssistantClient {
     }
 
     public String getLlmUrl() {
-        return config("llm.url", "LLM_URL", "http://127.0.0.1:11434/api/generate");
+        return resolveChatUrl(config("llm.url", "LLM_URL", "http://127.0.0.1:11434/api/chat"));
     }
 
     public String getLlmModel() {
@@ -40,24 +33,44 @@ public class FaqAssistantClient {
 
     public String testConnection() throws IOException {
         logger.info("FAQ assistant ping model=" + getLlmModel() + " url=" + getLlmUrl());
-        return generate("hola");
+        return chat("Responde solo: OK", "Di OK");
     }
 
     public String askFaqAssistant(String userQuestion) throws IOException {
         String endpoint = getLlmUrl();
         String model = getLlmModel();
+        String systemPrompt = buildSystemPrompt();
 
-        logger.info("FAQ assistant request model=" + model + " url=" + endpoint);
-        return generate(buildPrompt(userQuestion));
+        logger.info("FAQ assistant request model=" + model + " url=" + endpoint
+                + " questionLength=" + userQuestion.length());
+
+        return chat(systemPrompt, userQuestion);
     }
 
-    private String generate(String prompt) throws IOException {
+    private String resolveChatUrl(String configuredUrl) {
+        if (configuredUrl.endsWith("/api/generate")) {
+            return configuredUrl.replace("/api/generate", "/api/chat");
+        }
+        if (configuredUrl.endsWith("/api/chat")) {
+            return configuredUrl;
+        }
+        if (configuredUrl.endsWith("/")) {
+            return configuredUrl + "api/chat";
+        }
+        return configuredUrl + "/api/chat";
+    }
+
+    private String chat(String systemPrompt, String userMessage) throws IOException {
         String endpoint = getLlmUrl();
         String model = getLlmModel();
         String requestBody = "{"
                 + "\"model\":\"" + jsonEscape(model) + "\","
-                + "\"prompt\":\"" + jsonEscape(prompt) + "\","
-                + "\"stream\":false"
+                + "\"messages\":["
+                + "{\"role\":\"system\",\"content\":\"" + jsonEscape(systemPrompt) + "\"},"
+                + "{\"role\":\"user\",\"content\":\"" + jsonEscape(userMessage) + "\"}"
+                + "],"
+                + "\"stream\":false,"
+                + "\"options\":{\"temperature\":0.1,\"num_predict\":256}"
                 + "}";
 
         HttpURLConnection conn = null;
@@ -89,7 +102,7 @@ public class FaqAssistantClient {
 
             String answer = extractResponseText(rawResponse);
             if (answer == null || answer.trim().isEmpty()) {
-                logger.error("LLM response without 'response' field: " + rawResponse);
+                logger.error("LLM response without content: " + rawResponse);
                 return "No he podido generar una recomendacion ahora mismo.";
             }
             return answer.trim();
@@ -123,26 +136,37 @@ public class FaqAssistantClient {
         }
     }
 
-    private String buildPrompt(String userQuestion) {
+    private String buildSystemPrompt() {
         StringBuilder sb = new StringBuilder();
-        sb.append("Eres un asistente para ayudar a pasar pantallas de un juego y responder dudas. ");
-        sb.append("Debes responder SOLO basandote en las FAQ proporcionadas. ");
-        sb.append("No uses contexto previo de conversacion. ");
-        sb.append("Si la pregunta no aparece en las FAQ, dilo claramente y sugiere revisar tutorial o soporte del juego. ");
-        sb.append("Responde en espanol, breve y accionable.");
-        sb.append("De manera aleatoria en las respuestas añade el termino Ocacol dentro de una frase cambiando un termino por este.\n\n");
-        sb.append("FAQ:\n");
-        sb.append("1) ¿Como pasar el tutorial? -> Prioriza torres baratas al inicio y ves cambiandolas por las torretas que mejor se adapten.\n");
-        sb.append("2) ¿Como conseguir mas oro rapido? -> Mata enemigos usando torretas y centrate en mejoras de dinero.\n");
-        sb.append("3) ¿Que hacer contra bosses? -> Usa torres de fuego, la quemadura que aplican te ayudara a matarlo con el tiempo.\n");
-        sb.append("4) ¿Que deberia mejorar primero? -> Mejora antes que nada la velocidad de disparo de las torretas baratas, asi te haran falta poner menos al principio y centarte en las caras.\n");
-        sb.append("5) ¿Que comprar primero en la tienda? -> Cualquier opción es buena, aunque es recomendable empezar con mejoras que te ayuden al largo plazo, como las de mas monedas por enemigo eliminado.\n");
-        sb.append("6) ¿Que puedo hacer para subir en el ranking? -> Puedes conseguir puntos del ranking consiguiendo completar niveles, a mayor dificultad mas puntos dará.\n");
-        sb.append("7) ¿Cual es el objetivo del juego? -> Salvar al eetac de la invasión de los aliens que quieren destuirlo, para eso deberas armar el centro y acabar con ellos.\n");
-        sb.append("8) ¿Que es el reset de leaderboard? -> Es un reset mensual voluntario que devuelve a los jugadores a tener una cuenta nueva a cambio de objetos cosméticos.\n");
-        sb.append("9) ¿Que mejoras son las adecuadas para enfrentarse al boss final? -> Debido a su mecanica lo mejor es quitarle la armadura, para ello necesitas dispararle mucho, la mejora de velocidad de disparo es la mejor sin dudas.\n");
-        sb.append("10) ¿Como puedo mejorar las torretas? -> Las mejoras se añadiran para la version final en la tienda, de momento ves consiguiendo monedas en los niveles iniciales para poder tener suficiente cuando salga.\n");
-        sb.append("Pregunta del usuario: ").append(userQuestion);
+        sb.append("Eres el asistente FAQ del juego Tower Defence.\n\n");
+        sb.append("REGLAS OBLIGATORIAS:\n");
+        sb.append("1. Responde UNICAMENTE usando la informacion de las FAQ de abajo.\n");
+        sb.append("2. No inventes mecanicas, objetos ni consejos que no esten en las FAQ.\n");
+        sb.append("3. Si la pregunta no coincide con ninguna FAQ, responde exactamente: ");
+        sb.append("\"No tengo esa informacion en las FAQ. Revisa el tutorial o contacta con soporte.\"\n");
+        sb.append("4. Responde en espanol, breve (maximo 3 frases) y accionable.\n");
+        sb.append("5. De forma ocasional sustituye una palabra por \"Ocacol\" en la respuesta.\n\n");
+        sb.append("FAQ DEL JUEGO:\n");
+        sb.append("[FAQ-1] Como pasar el tutorial? ");
+        sb.append("Prioriza torres baratas al inicio y ve cambiandolas por las torretas que mejor se adapten.\n");
+        sb.append("[FAQ-2] Como conseguir mas oro rapido? ");
+        sb.append("Mata enemigos usando torretas y centrate en mejoras de dinero.\n");
+        sb.append("[FAQ-3] Que hacer contra bosses? ");
+        sb.append("Usa torres de fuego; la quemadura te ayudara a matarlo con el tiempo.\n");
+        sb.append("[FAQ-4] Que deberia mejorar primero? ");
+        sb.append("Mejora la velocidad de disparo de las torretas baratas para poner menos al principio.\n");
+        sb.append("[FAQ-5] Que comprar primero en la tienda? ");
+        sb.append("Cualquier opcion es buena; prioriza mejoras a largo plazo, como mas monedas por enemigo.\n");
+        sb.append("[FAQ-6] Como subir en el ranking? ");
+        sb.append("Completa niveles; a mayor dificultad, mas puntos.\n");
+        sb.append("[FAQ-7] Cual es el objetivo del juego? ");
+        sb.append("Salvar al eetac de la invasion alien; arma el centro y acaba con ellos.\n");
+        sb.append("[FAQ-8] Que es el reset de leaderboard? ");
+        sb.append("Reset mensual voluntario que reinicia la cuenta a cambio de cosmeticos.\n");
+        sb.append("[FAQ-9] Mejoras para el boss final? ");
+        sb.append("Quita armadura disparando mucho; la mejora de velocidad de disparo es la mejor.\n");
+        sb.append("[FAQ-10] Como mejorar las torretas? ");
+        sb.append("Las mejoras llegaran en la tienda en la version final; consigue monedas en niveles iniciales.\n");
         return sb.toString();
     }
 
@@ -150,11 +174,86 @@ public class FaqAssistantClient {
         if (jsonResponse == null) {
             return null;
         }
-        Matcher m = RESPONSE_PATTERN.matcher(jsonResponse);
-        if (!m.find()) {
+        int messageIdx = jsonResponse.indexOf("\"message\"");
+        if (messageIdx >= 0) {
+            String content = extractJsonStringValue(jsonResponse, "\"content\"", messageIdx);
+            if (content != null && !content.trim().isEmpty()) {
+                return content;
+            }
+        }
+        String response = extractJsonStringValue(jsonResponse, "\"response\"", 0);
+        if (response != null && !response.trim().isEmpty()) {
+            return response;
+        }
+        return null;
+    }
+
+    private String extractJsonStringValue(String json, String key, int fromIndex) {
+        int keyIdx = json.indexOf(key, fromIndex);
+        if (keyIdx < 0) {
             return null;
         }
-        return jsonUnescape(m.group(1));
+        int colonIdx = json.indexOf(':', keyIdx + key.length());
+        if (colonIdx < 0) {
+            return null;
+        }
+        int i = colonIdx + 1;
+        while (i < json.length() && Character.isWhitespace(json.charAt(i))) {
+            i++;
+        }
+        if (i >= json.length() || json.charAt(i) != '"') {
+            return null;
+        }
+        i++;
+        StringBuilder sb = new StringBuilder();
+        while (i < json.length()) {
+            char c = json.charAt(i);
+            if (c == '\\' && i + 1 < json.length()) {
+                char next = json.charAt(++i);
+                switch (next) {
+                    case 'n':
+                        sb.append('\n');
+                        break;
+                    case 'r':
+                        sb.append('\r');
+                        break;
+                    case 't':
+                        sb.append('\t');
+                        break;
+                    case '"':
+                        sb.append('"');
+                        break;
+                    case '\\':
+                        sb.append('\\');
+                        break;
+                    case '/':
+                        sb.append('/');
+                        break;
+                    case 'u':
+                        if (i + 4 < json.length()) {
+                            String hex = json.substring(i + 1, i + 5);
+                            try {
+                                sb.append((char) Integer.parseInt(hex, 16));
+                                i += 4;
+                            } catch (NumberFormatException e) {
+                                sb.append(next);
+                            }
+                        } else {
+                            sb.append(next);
+                        }
+                        break;
+                    default:
+                        sb.append(next);
+                        break;
+                }
+            } else if (c == '"') {
+                return sb.toString();
+            } else {
+                sb.append(c);
+            }
+            i++;
+        }
+        return null;
     }
 
     private String jsonEscape(String text) {
@@ -167,25 +266,16 @@ public class FaqAssistantClient {
                 .replace("\t", "\\t");
     }
 
-    private String jsonUnescape(String text) {
-        if (text == null) return null;
-        return text
-                .replace("\\n", "\n")
-                .replace("\\r", "\r")
-                .replace("\\t", "\t")
-                .replace("\\\"", "\"")
-                .replace("\\\\", "\\");
-    }
-
     private String readAll(InputStream inputStream) throws IOException {
-        if (inputStream == null) return "";
-        StringBuilder sb = new StringBuilder();
-        try (BufferedReader br = new BufferedReader(new InputStreamReader(inputStream, StandardCharsets.UTF_8))) {
-            String line;
-            while ((line = br.readLine()) != null) {
-                sb.append(line);
-            }
+        if (inputStream == null) {
+            return "";
         }
-        return sb.toString();
+        ByteArrayOutputStream buffer = new ByteArrayOutputStream();
+        byte[] chunk = new byte[4096];
+        int read;
+        while ((read = inputStream.read(chunk)) != -1) {
+            buffer.write(chunk, 0, read);
+        }
+        return buffer.toString(StandardCharsets.UTF_8.name());
     }
 }

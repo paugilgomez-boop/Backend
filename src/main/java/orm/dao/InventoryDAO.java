@@ -12,5 +12,7 @@ public interface InventoryDAO {
 
     List<Inventory> getInventoryByUser(int userId);
 
+    int getItemQuantity(Session session, int userId, int itemId);
+
     void clear();
 }

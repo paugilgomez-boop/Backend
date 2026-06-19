@@ -64,6 +64,23 @@ public class InventoryDAOImpl implements InventoryDAO {
     }
 
     @Override
+    public int getItemQuantity(Session session, int userId, int itemId) {
+        String query = "SELECT quantity FROM Inventory WHERE userId = ? AND itemId = ?";
+        try (PreparedStatement pstm = session.getConnection().prepareStatement(query)) {
+            pstm.setInt(1, userId);
+            pstm.setInt(2, itemId);
+            try (java.sql.ResultSet rs = pstm.executeQuery()) {
+                if (!rs.next()) {
+                    return 0;
+                }
+                return rs.getInt("quantity");
+            }
+        } catch (Exception e) {
+            throw new RuntimeException("Error consultando inventario", e);
+        }
+    }
+
+    @Override
     public void clear() {
         Session session = null;
         try {

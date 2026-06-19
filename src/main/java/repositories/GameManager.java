@@ -7,6 +7,8 @@ import models.User;
 import models.GameEvent;
 import models.EventRegistration;
 import models.TeamResponse;
+import responses.GameUpgradePurchaseResponse;
+import responses.GameUpgradesResponse;
 
 import java.util.List;
 
@@ -47,6 +49,10 @@ public interface GameManager {
     List<User> getUsersByEvent(int eventId);
 
     TeamResponse getUserTeam(String username);
+
+    GameUpgradesResponse getUpgradesByUsername(String username);
+
+    GameUpgradePurchaseResponse purchaseUpgrade(String username, String upgradeType);
 
     void clear();
 }

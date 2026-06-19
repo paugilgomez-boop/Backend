@@ -8,8 +8,10 @@ import org.glassfish.grizzly.http.server.HttpServer;
 import org.glassfish.grizzly.http.server.StaticHttpHandler;
 import org.glassfish.jersey.grizzly2.httpserver.GrizzlyHttpServerFactory;
 import org.glassfish.jersey.server.ResourceConfig;
+import services.CorsFilter;
 import services.FaqAssistantClient;
 import services.GameService;
+import services.UnityGameService;
 
 public class Main {
   private static final String BIND_HOST = config("server.bindHost", "SERVER_BIND_HOST", "0.0.0.0");
@@ -47,6 +49,8 @@ public class Main {
     final ResourceConfig rc =
         new ResourceConfig()
             .register(GameService.class)
+            .register(UnityGameService.class)
+            .register(CorsFilter.class)
             .register(MyExceptionMapper.class)
             .register(io.swagger.jaxrs.listing.ApiListingResource.class)
             .register(io.swagger.jaxrs.listing.SwaggerSerializers.class);
@@ -100,6 +104,7 @@ public class Main {
     logger.info("Public host (Swagger/clients): " + PUBLIC_HOST);
     logger.info("Web: http://" + PUBLIC_HOST + ":" + BIND_PORT + "/login.html");
     logger.info("API: http://" + PUBLIC_HOST + ":" + BIND_PORT + "/dsaApp/game");
+    logger.info("Unity API: http://" + PUBLIC_HOST + ":" + BIND_PORT + "/dsaApp/api/game/upgrades");
 
     FaqAssistantClient faqClient = new FaqAssistantClient();
     logger.info("LLM config url=" + faqClient.getLlmUrl() + " model=" + faqClient.getLlmModel());
