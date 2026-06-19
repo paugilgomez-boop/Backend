@@ -10,6 +10,10 @@ public interface TeamMemberDAO {
 
     List<TeamMember> getMembersByTeam(String team);
 
+    TeamMember getMemberByName(String name);
+
+    List<TeamMember> getAllMembers();
+
     boolean isEmpty();
 
     void clear();

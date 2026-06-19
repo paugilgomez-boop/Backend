@@ -46,6 +46,41 @@ public class TeamMemberDAOImpl implements TeamMemberDAO {
     }
 
     @Override
+    public TeamMember getMemberByName(String name) {
+        Session session = null;
+        try {
+            session = FactorySession.openSession();
+            HashMap<String, Object> params = new HashMap<>();
+            params.put("name", name);
+            @SuppressWarnings("unchecked")
+            List<TeamMember> list = (List<TeamMember>) (List<?>) session.findAll(TeamMember.class, params);
+            if (list.isEmpty()) {
+                return null;
+            }
+            return list.get(0);
+        } finally {
+            if (session != null) {
+                session.close();
+            }
+        }
+    }
+
+    @Override
+    public List<TeamMember> getAllMembers() {
+        Session session = null;
+        try {
+            session = FactorySession.openSession();
+            @SuppressWarnings("unchecked")
+            List<TeamMember> list = (List<TeamMember>) (List<?>) session.findAll(TeamMember.class, new HashMap<>());
+            return list;
+        } finally {
+            if (session != null) {
+                session.close();
+            }
+        }
+    }
+
+    @Override
     public boolean isEmpty() {
         return getMembersByTeam("porxinos").isEmpty();
     }

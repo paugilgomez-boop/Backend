@@ -61,4 +61,12 @@ public class TeamMember {
     public void setPoints(int points) {
         this.points = points;
     }
+
+    public String getUsername() {
+        return name;
+    }
+
+    public void setUsername(String username) {
+        this.name = username;
+    }
 }

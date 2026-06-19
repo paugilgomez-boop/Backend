@@ -8,7 +8,7 @@ public class DBUtils {
     public static final String DB_NAME = config("db.name", "DB_NAME", "towerdefence");
     public static final String DB_HOST = config("db.host", "DB_HOST", "127.0.0.1");
     public static final String DB_USER = config("db.user", "DB_USER", "root");
-    public static final String DB_PASS = config("db.password", "DB_PASS", "pgilDSA");
+    public static final String DB_PASS = config("db.password", "DB_PASS", "root");
     public static final String DB_PORT = config("db.port", "DB_PORT", "3306");
 
     private static String config(String systemProperty, String envVar, String defaultValue) {
