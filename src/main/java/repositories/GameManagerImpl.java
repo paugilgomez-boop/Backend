@@ -8,8 +8,12 @@ import models.GameEvent;
 import models.EventRegistration;
 import models.TeamMember;
 import models.TeamResponse;
+import models.Team;
+import models.TeamInfoResponse;
 import orm.FactorySession;
 import orm.Session;
+import responses.GameUpgradePurchaseResponse;
+import responses.GameUpgradesResponse;
 import orm.dao.EventDAO;
 import orm.dao.EventDAOImpl;
 import orm.dao.EventRegistrationDAO;
@@ -36,6 +40,10 @@ public class GameManagerImpl implements GameManager {
 
     private static GameManagerImpl instance;
     final static Logger logger = Logger.getLogger(GameManagerImpl.class);
+    private static final double BASE_UPGRADE_PRICE = 100.0;
+    public static final int DAMAGE_UPGRADE_ITEM_ID = 2;
+    public static final int ATTACK_SPEED_UPGRADE_ITEM_ID = 3;
+    public static final int RANGE_UPGRADE_ITEM_ID = 4;
 
     private final UserDAO userDAO;
     private final ItemDAO itemDAO;
@@ -335,9 +343,218 @@ public class GameManagerImpl implements GameManager {
             throw new IllegalArgumentException("Username invalido");
         }
 
-        String team = "porxinos";
+        TeamMember member = teamMemberDAO.getMemberByName(username);
+        String team = (member != null) ? member.getTeam() : "porxinos";
         List<TeamMember> members = teamMemberDAO.getMembersByTeam(team);
         return new TeamResponse(team, members);
+    }
+
+    @Override
+    public List<Team> getTeamsRanking() {
+        List<TeamMember> allMembers = teamMemberDAO.getAllMembers();
+        java.util.Map<String, Team> teamMap = new java.util.HashMap<>();
+
+        for (TeamMember m : allMembers) {
+            String teamName = m.getTeam();
+            if (isBlank(teamName)) {
+                continue;
+            }
+
+            Team team = teamMap.get(teamName);
+            if (team == null) {
+                team = new Team(teamName, m.getAvatar(), 0);
+                teamMap.put(teamName, team);
+            }
+            team.setPoints(team.getPoints() + m.getPoints());
+        }
+
+        String[] defaultTeams = {"porxinos", "aniquiladores", "saiyans", "troncos"};
+        for (String tName : defaultTeams) {
+            if (!teamMap.containsKey(tName)) {
+                teamMap.put(tName, new Team(tName,
+                        "https://cdn.pixabay.com/photo/2016/03/31/19/58/avatar-1295397_1280.png", 0));
+            }
+        }
+
+        List<Team> ranking = new ArrayList<>(teamMap.values());
+        ranking.sort((t1, t2) -> Integer.compare(t2.getPoints(), t1.getPoints()));
+        return ranking;
+    }
+
+    @Override
+    public Team joinTeam(String teamName, String username) {
+        if (isBlank(teamName) || isBlank(username)) {
+            throw new IllegalArgumentException("Parametros invalidos");
+        }
+
+        User user = userDAO.getUserByUsername(username);
+        if (user == null) {
+            throw new NoSuchElementException("No existe el usuario " + username);
+        }
+
+        TeamMember member = teamMemberDAO.getMemberByName(username);
+        if (member != null) {
+            Session session = null;
+            try {
+                session = FactorySession.openSession();
+                session.beginTransaction();
+                TeamMember dbMember = (TeamMember) session.get(TeamMember.class, member.getId());
+                if (dbMember != null) {
+                    dbMember.setTeam(teamName);
+                    session.update(dbMember);
+                } else {
+                    session.update(member);
+                }
+                session.commit();
+            } catch (RuntimeException e) {
+                if (session != null) {
+                    session.rollback();
+                }
+                throw e;
+            } finally {
+                if (session != null) {
+                    session.close();
+                }
+            }
+        } else {
+            String avatar = "https://cdn.pixabay.com/photo/2016/03/31/19/58/avatar-1295397_1280.png";
+            TeamMember newMember = new TeamMember(0, teamName, username, avatar, 0);
+            teamMemberDAO.addTeamMember(newMember);
+        }
+
+        for (Team t : getTeamsRanking()) {
+            if (t.getName().equals(teamName)) {
+                return t;
+            }
+        }
+        return new Team(teamName, "https://cdn.pixabay.com/photo/2016/03/31/19/58/avatar-1295397_1280.png", 0);
+    }
+
+    @Override
+    public TeamInfoResponse getMyTeamInfo(String username) {
+        if (isBlank(username)) {
+            throw new IllegalArgumentException("Username invalido");
+        }
+
+        TeamMember member = teamMemberDAO.getMemberByName(username);
+        if (member == null) {
+            throw new NoSuchElementException("El usuario no pertenece a ningun equipo");
+        }
+
+        String teamName = member.getTeam();
+        List<TeamMember> members = teamMemberDAO.getMembersByTeam(teamName);
+        return new TeamInfoResponse(teamName, members);
+    }
+
+    @Override
+    public void leaveTeam(String username) {
+        if (isBlank(username)) {
+            throw new IllegalArgumentException("Username invalido");
+        }
+
+        TeamMember member = teamMemberDAO.getMemberByName(username);
+        if (member == null) {
+            throw new NoSuchElementException("El usuario no pertenece a ningun equipo");
+        }
+
+        Session session = null;
+        try {
+            session = FactorySession.openSession();
+            session.beginTransaction();
+            TeamMember dbMember = (TeamMember) session.get(TeamMember.class, member.getId());
+            if (dbMember != null) {
+                session.delete(dbMember);
+            }
+            session.commit();
+        } catch (RuntimeException e) {
+            if (session != null) {
+                session.rollback();
+            }
+            throw e;
+        } finally {
+            if (session != null) {
+                session.close();
+            }
+        }
+    }
+
+    @Override
+    public GameUpgradesResponse getUpgradesByUsername(String username) {
+        if (isBlank(username)) {
+            throw new IllegalArgumentException("userId invalido");
+        }
+
+        User user = userDAO.getUserByUsername(username);
+        if (user == null) {
+            return zeroUpgradesResponse(username);
+        }
+
+        return toUpgradesResponse(username, inventoryDAO.getInventoryByUser(user.getId()));
+    }
+
+    @Override
+    public GameUpgradePurchaseResponse purchaseUpgrade(String username, String upgradeType) {
+        if (isBlank(username)) {
+            throw new IllegalArgumentException("userId invalido");
+        }
+
+        User user = userDAO.getUserByUsername(username);
+        if (user == null) {
+            throw new NoSuchElementException("Usuario no encontrado");
+        }
+
+        String normalizedType = normalizeUpgradeType(upgradeType);
+        int itemId = upgradeItemIdForType(normalizedType);
+        Session session = null;
+        try {
+            session = FactorySession.openSession();
+            session.beginTransaction();
+
+            User lockedUser = (User) session.get(User.class, user.getId());
+            Item item = (Item) session.get(Item.class, itemId);
+            if (item == null) {
+                throw new NoSuchElementException("Item de mejora no encontrado");
+            }
+            if (!item.isAvailable()) {
+                throw new IllegalStateException("Item no disponible");
+            }
+
+            int currentLevel = inventoryDAO.getItemQuantity(session, lockedUser.getId(), itemId);
+            double price = upgradePrice(currentLevel);
+            if (lockedUser.getSaldo() < price) {
+                throw new IllegalStateException("Saldo insuficiente");
+            }
+
+            double newSaldo = lockedUser.getSaldo() - price;
+            lockedUser.setSaldo(newSaldo);
+            userDAO.updateUser(session, lockedUser);
+            inventoryDAO.addOrIncreaseItem(session, lockedUser.getId(), itemId, 1);
+
+            Purchase purchase = new Purchase(
+                    0, lockedUser.getId(), itemId, 1, price, newSaldo, Instant.now().toString());
+            purchaseDAO.addPurchase(session, purchase);
+
+            session.commit();
+            GameUpgradesResponse levels = toUpgradesResponse(
+                    username, inventoryDAO.getInventoryByUser(lockedUser.getId()));
+            return new GameUpgradePurchaseResponse(
+                    true,
+                    username,
+                    levels.getDamageLevel(),
+                    levels.getRangeLevel(),
+                    levels.getAttackSpeedLevel(),
+                    newSaldo
+            );
+        } catch (RuntimeException e) {
+            if (session != null) {
+                session.rollback();
+            }
+            throw e;
+        } finally {
+            if (session != null) {
+                session.close();
+            }
+        }
     }
 
     private void addInitialDataIfNeeded() {
@@ -428,5 +645,60 @@ public class GameManagerImpl implements GameManager {
 
     private boolean isBlank(String value) {
         return value == null || value.trim().isEmpty();
+    }
+
+    private GameUpgradesResponse zeroUpgradesResponse(String username) {
+        return new GameUpgradesResponse(username, 0, 0, 0);
+    }
+
+    private GameUpgradesResponse toUpgradesResponse(String username, List<Inventory> inventory) {
+        return new GameUpgradesResponse(
+                username,
+                getQuantity(inventory, DAMAGE_UPGRADE_ITEM_ID),
+                getQuantity(inventory, RANGE_UPGRADE_ITEM_ID),
+                getQuantity(inventory, ATTACK_SPEED_UPGRADE_ITEM_ID)
+        );
+    }
+
+    private int getQuantity(List<Inventory> inventory, int itemId) {
+        for (Inventory entry : inventory) {
+            if (entry.getItemId() == itemId) {
+                return entry.getQuantity();
+            }
+        }
+        return 0;
+    }
+
+    private String normalizeUpgradeType(String upgradeType) {
+        if (upgradeType == null) {
+            throw new IllegalArgumentException("upgradeType invalido");
+        }
+        switch (upgradeType.trim()) {
+            case "damage":
+                return "damage";
+            case "range":
+                return "range";
+            case "attackSpeed":
+                return "attackSpeed";
+            default:
+                throw new IllegalArgumentException("upgradeType invalido");
+        }
+    }
+
+    private int upgradeItemIdForType(String upgradeType) {
+        switch (upgradeType) {
+            case "damage":
+                return DAMAGE_UPGRADE_ITEM_ID;
+            case "range":
+                return RANGE_UPGRADE_ITEM_ID;
+            case "attackSpeed":
+                return ATTACK_SPEED_UPGRADE_ITEM_ID;
+            default:
+                throw new IllegalArgumentException("upgradeType invalido");
+        }
+    }
+
+    private double upgradePrice(int currentLevel) {
+        return BASE_UPGRADE_PRICE * Math.pow(2, currentLevel);
     }
 }

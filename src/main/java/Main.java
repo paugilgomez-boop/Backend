@@ -8,8 +8,12 @@ import org.glassfish.grizzly.http.server.HttpServer;
 import org.glassfish.grizzly.http.server.StaticHttpHandler;
 import org.glassfish.jersey.grizzly2.httpserver.GrizzlyHttpServerFactory;
 import org.glassfish.jersey.server.ResourceConfig;
+import services.CorsFilter;
 import services.FaqAssistantClient;
+import services.ForumService;
 import services.GameService;
+import services.TeamService;
+import services.UnityGameService;
 
 public class Main {
   private static final String BIND_HOST = config("server.bindHost", "SERVER_BIND_HOST", "0.0.0.0");
@@ -47,6 +51,10 @@ public class Main {
     final ResourceConfig rc =
         new ResourceConfig()
             .register(GameService.class)
+            .register(TeamService.class)
+            .register(ForumService.class)
+            .register(UnityGameService.class)
+            .register(CorsFilter.class)
             .register(MyExceptionMapper.class)
             .register(io.swagger.jaxrs.listing.ApiListingResource.class)
             .register(io.swagger.jaxrs.listing.SwaggerSerializers.class);
