@@ -77,3 +77,12 @@ CREATE TABLE IF NOT EXISTS ForumTopic (
     createdAt VARCHAR(64) NOT NULL,
     messageCount INT NOT NULL DEFAULT 0
 );
+
+CREATE TABLE IF NOT EXISTS ForumMessage (
+    id INT AUTO_INCREMENT PRIMARY KEY,
+    topicId INT NOT NULL,
+    author VARCHAR(100) NOT NULL,
+    content VARCHAR(1000) NOT NULL,
+    createdAt VARCHAR(64) NOT NULL,
+    CONSTRAINT fk_forum_message_topic FOREIGN KEY (topicId) REFERENCES ForumTopic(id) ON DELETE CASCADE
+);

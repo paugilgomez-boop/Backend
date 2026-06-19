@@ -7,6 +7,7 @@ public interface ForumTopicDAO {
     ForumTopic addTopic(ForumTopic topic);
     ForumTopic getTopic(int id);
     List<ForumTopic> getTopics();
+    void updateTopic(ForumTopic topic);
     boolean isEmpty();
     void clear();
 }

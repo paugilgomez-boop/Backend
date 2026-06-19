@@ -5,9 +5,13 @@ import io.swagger.annotations.ApiOperation;
 import io.swagger.annotations.ApiResponse;
 import io.swagger.annotations.ApiResponses;
 import models.ForumTopic;
+import models.ForumMessage;
 import orm.dao.ForumTopicDAO;
 import orm.dao.ForumTopicDAOImpl;
+import orm.dao.ForumMessageDAO;
+import orm.dao.ForumMessageDAOImpl;
 import requests.CreateForumTopicRequest;
+import requests.CreateForumMessageRequest;
 
 import javax.ws.rs.*;
 import javax.ws.rs.core.GenericEntity;
@@ -22,9 +26,11 @@ import java.util.NoSuchElementException;
 public class ForumService {
 
     private final ForumTopicDAO forumTopicDAO;
+    private final ForumMessageDAO forumMessageDAO;
 
     public ForumService() {
         this.forumTopicDAO = new ForumTopicDAOImpl();
+        this.forumMessageDAO = new ForumMessageDAOImpl();
     }
 
     // ── GET /forum/topics ─────────────────────────────────────────────────────
@@ -85,6 +91,48 @@ public class ForumService {
         );
 
         ForumTopic saved = forumTopicDAO.addTopic(topic);
+        return Response.status(201).entity(saved).build();
+    }
+
+    // ── GET /forum/topics/{id}/messages ───────────────────────────────────────
+    @GET
+    @Path("/topics/{id}/messages")
+    @Produces(MediaType.APPLICATION_JSON)
+    @ApiOperation(value = "Obtener todos los mensajes de una temática")
+    public Response getMessages(@PathParam("id") int id) {
+        List<ForumMessage> messages = forumMessageDAO.getMessagesByTopic(id);
+        GenericEntity<List<ForumMessage>> entity = new GenericEntity<List<ForumMessage>>(messages) {};
+        return Response.status(200).entity(entity).build();
+    }
+
+    // ── POST /forum/topics/{id}/messages ──────────────────────────────────────
+    @POST
+    @Path("/topics/{id}/messages")
+    @Consumes(MediaType.APPLICATION_JSON)
+    @Produces(MediaType.APPLICATION_JSON)
+    @ApiOperation(value = "Crear un nuevo mensaje en una temática")
+    public Response createMessage(@PathParam("id") int id, CreateForumMessageRequest request) {
+        if (request == null || request.getAuthor() == null || request.getAuthor().trim().isEmpty()
+                || request.getContent() == null || request.getContent().trim().isEmpty()) {
+            return Response.status(400).entity("Autor y contenido son obligatorios").build();
+        }
+        ForumTopic topic = forumTopicDAO.getTopic(id);
+        if (topic == null) {
+            return Response.status(404).entity("Temática no encontrada").build();
+        }
+        ForumMessage message = new ForumMessage(
+                0,
+                id,
+                request.getAuthor().trim(),
+                request.getContent().trim(),
+                Instant.now().toString()
+        );
+        ForumMessage saved = forumMessageDAO.addMessage(message);
+
+        // Increment messageCount in ForumTopic
+        topic.setMessageCount(topic.getMessageCount() + 1);
+        forumTopicDAO.updateTopic(topic);
+
         return Response.status(201).entity(saved).build();
     }
 }

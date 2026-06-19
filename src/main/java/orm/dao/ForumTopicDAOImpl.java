@@ -56,6 +56,20 @@ public class ForumTopicDAOImpl implements ForumTopicDAO {
     }
 
     @Override
+    public void updateTopic(ForumTopic topic) {
+        Session session = null;
+        try {
+            session = FactorySession.openSession();
+            session.update(topic);
+            logger.info("ForumTopic '" + topic.getTitle() + "' actualizada correctamente");
+        } finally {
+            if (session != null) {
+                session.close();
+            }
+        }
+    }
+
+    @Override
     public boolean isEmpty() {
         return getTopics().isEmpty();
     }
