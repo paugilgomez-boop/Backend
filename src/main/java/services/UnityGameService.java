@@ -6,7 +6,9 @@ import io.swagger.annotations.ApiResponse;
 import io.swagger.annotations.ApiResponses;
 import repositories.GameManager;
 import repositories.GameManagerImpl;
+import requests.EarnCoinsRequest;
 import requests.PurchaseUpgradeRequest;
+import responses.EarnCoinsResponse;
 import responses.GameUpgradePurchaseResponse;
 import responses.GameUpgradesResponse;
 
@@ -45,6 +47,29 @@ public class UnityGameService {
         try {
             GameUpgradesResponse response = gm.getUpgradesByUsername(userId.trim());
             return Response.ok(response).build();
+        } catch (Exception e) {
+            return Response.status(500).entity("Error interno").build();
+        }
+    }
+
+    @POST
+    @Path("/coins/earn")
+    @Consumes(MediaType.APPLICATION_JSON)
+    @Produces(MediaType.APPLICATION_JSON)
+    @ApiOperation(value = "Sumar monedas ganadas al completar un nivel")
+    @ApiResponses(value = {
+            @ApiResponse(code = 200, message = "Monedas acreditadas", response = EarnCoinsResponse.class),
+            @ApiResponse(code = 400, message = "Datos invalidos")
+    })
+    public Response earnCoins(EarnCoinsRequest request) {
+        if (request == null || request.getUserId() == null || request.getUserId().trim().isEmpty()) {
+            return Response.status(400).entity("userId requerido").build();
+        }
+        try {
+            EarnCoinsResponse response = gm.earnCoins(request.getUserId().trim(), request.getCoinsEarned());
+            return Response.ok(response).build();
+        } catch (IllegalArgumentException e) {
+            return Response.status(400).entity(e.getMessage()).build();
         } catch (Exception e) {
             return Response.status(500).entity("Error interno").build();
         }

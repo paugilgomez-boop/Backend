@@ -1,4 +1,4 @@
-# API Unity — Mejoras de torretas
+# API Unity — Monedas y mejoras de torretas
 
 Contrato REST para el cliente Unity (Tower Defense). Base URL en producción:
 
@@ -15,6 +15,64 @@ El servidor **solo devuelve niveles comprados** (enteros ≥ 0). Los multiplicad
 | Daño | `daño base × (1 + damageLevel × 0.15)` |
 | Rango | `rango base × (1 + rangeLevel × 0.10)` |
 | Vel. ataque | `firerate base × (1 + attackSpeedLevel × 0.12)` |
+
+---
+
+## POST `/coins/earn`
+
+Suma monedas ganadas al completar un nivel. El saldo se guarda en el campo `saldo` del usuario en BD (compartido con la tienda web).
+
+**Body** (`application/json`)
+
+```json
+{
+  "userId": "marc",
+  "coinsEarned": 265
+}
+```
+
+| Campo | Tipo | Descripción |
+|-------|------|-------------|
+| `userId` | string | Username del jugador (PlayerPrefs `dsa_user_id`, o `"guest"`) |
+| `coinsEarned` | int ≥ 1 | Monedas ganadas en la partida (Unity no llama si es 0) |
+
+**Respuesta 200**
+
+```json
+{
+  "userId": "marc",
+  "coinsEarned": 265,
+  "totalCoins": 530
+}
+```
+
+| Campo | Descripción |
+|-------|-------------|
+| `coinsEarned` | Monedas de esta petición (confirmación) |
+| `totalCoins` | Saldo total del usuario tras sumar |
+
+**Errores**
+
+| Código | Cuándo |
+|--------|--------|
+| 400 | `userId` vacío, `coinsEarned` ≤ 0, JSON inválido |
+| 500 | Error interno |
+
+Si el usuario no existe, se **crea automáticamente** con saldo inicial 0 y permisos `PLAYER` (adecuado para `guest` y jugadores sin registro previo).
+
+**Ejemplo curl**
+
+```bash
+curl -s -X POST "https://dsa3.upc.edu/dsaApp/api/game/coins/earn" \
+  -H "Content-Type: application/json" \
+  -d '{"userId":"marc","coinsEarned":265}'
+```
+
+**Flujo completo con mejoras**
+
+1. Jugador gana partida → `POST /coins/earn` (suma monedas al `saldo`)
+2. Jugador entra al juego / tienda → `GET /upgrades` (lee niveles de torreta)
+3. Tienda web gasta `saldo` para comprar mejoras (inventario items 2, 3, 4)
 
 ---
 
@@ -135,6 +193,15 @@ El endpoint `POST /upgrades/purchase` usa precio escalonado (`100 × 2^nivel`) y
 ---
 
 ## Casos de prueba
+
+### Monedas
+
+1. Usuario existente con 265 monedas gana 265 → `totalCoins` = 530.
+2. Usuario nuevo gana 50 → se crea con `totalCoins` = 50.
+3. `coinsEarned` = 0 → 400 (Unity no llama en este caso).
+4. `userId` vacío → 400.
+
+### Mejoras
 
 1. `userId` existente con mejoras → niveles reales.
 2. `userId` existente sin items de mejora en inventario → todos `0`.

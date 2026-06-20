@@ -9,6 +9,7 @@ import models.EventRegistration;
 import models.TeamResponse;
 import models.Team;
 import models.TeamInfoResponse;
+import responses.EarnCoinsResponse;
 import responses.GameUpgradePurchaseResponse;
 import responses.GameUpgradesResponse;
 
@@ -63,6 +64,8 @@ public interface GameManager {
     GameUpgradesResponse getUpgradesByUsername(String username);
 
     GameUpgradePurchaseResponse purchaseUpgrade(String username, String upgradeType);
+
+    EarnCoinsResponse earnCoins(String username, int coinsEarned);
 
     void clear();
 }

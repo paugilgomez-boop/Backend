@@ -12,6 +12,7 @@ import models.Team;
 import models.TeamInfoResponse;
 import orm.FactorySession;
 import orm.Session;
+import responses.EarnCoinsResponse;
 import responses.GameUpgradePurchaseResponse;
 import responses.GameUpgradesResponse;
 import orm.dao.EventDAO;
@@ -490,6 +491,44 @@ public class GameManagerImpl implements GameManager {
         }
 
         return toUpgradesResponse(username, inventoryDAO.getInventoryByUser(user.getId()));
+    }
+
+    @Override
+    public EarnCoinsResponse earnCoins(String username, int coinsEarned) {
+        if (isBlank(username)) {
+            throw new IllegalArgumentException("userId invalido");
+        }
+        if (coinsEarned <= 0) {
+            throw new IllegalArgumentException("coinsEarned debe ser mayor que 0");
+        }
+
+        User user = userDAO.getUserByUsername(username);
+        if (user == null) {
+            user = registerUser(new User(0, username, username, username + "@game.local", 0, "PLAYER", 1));
+        }
+
+        Session session = null;
+        try {
+            session = FactorySession.openSession();
+            session.beginTransaction();
+
+            User lockedUser = (User) session.get(User.class, user.getId());
+            double newSaldo = lockedUser.getSaldo() + coinsEarned;
+            lockedUser.setSaldo(newSaldo);
+            userDAO.updateUser(session, lockedUser);
+
+            session.commit();
+            return new EarnCoinsResponse(username, coinsEarned, (int) newSaldo);
+        } catch (RuntimeException e) {
+            if (session != null) {
+                session.rollback();
+            }
+            throw e;
+        } finally {
+            if (session != null) {
+                session.close();
+            }
+        }
     }
 
     @Override
