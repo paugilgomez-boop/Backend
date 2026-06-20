@@ -9,7 +9,7 @@ import models.Item;
 import models.Purchase;
 import models.User;
 import models.GameEvent;
-import models.TeamResponse;
+import responses.TeamResponse;
 import repositories.GameManager;
 import repositories.GameManagerImpl;
 import requests.BuyItemRequest;
@@ -33,7 +33,6 @@ import javax.ws.rs.Produces;
 import javax.ws.rs.core.GenericEntity;
 import javax.ws.rs.core.MediaType;
 import javax.ws.rs.core.Response;
-import java.io.IOException;
 import java.util.List;
 import java.util.NoSuchElementException;
 

@@ -1,4 +1,6 @@
-package models;
+package responses;
+
+import models.TeamMember;
 
 import java.util.List;
 

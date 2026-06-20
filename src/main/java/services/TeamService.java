@@ -5,7 +5,7 @@ import io.swagger.annotations.ApiOperation;
 import io.swagger.annotations.ApiResponse;
 import io.swagger.annotations.ApiResponses;
 import models.Team;
-import models.TeamInfoResponse;
+import responses.TeamInfoResponse;
 import repositories.GameManager;
 import repositories.GameManagerImpl;
 
