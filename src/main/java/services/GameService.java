@@ -173,6 +173,23 @@ public class GameService {
         return Response.status(200).entity(entity).build();
     }
 
+    @GET
+    @Path("/users/{userId}")
+    @Produces(MediaType.APPLICATION_JSON)
+    @ApiOperation(value = "Obtener detalles de un usuario por id")
+    @ApiResponses(value = {
+            @ApiResponse(code = 200, message = "Consulta correcta", response = User.class),
+            @ApiResponse(code = 404, message = "Usuario no encontrado")
+    })
+    public Response getUser(@PathParam("userId") int userId) {
+        try {
+            User user = gm.getUser(userId);
+            return Response.status(200).entity(user).build();
+        } catch (NoSuchElementException e) {
+            return Response.status(404).entity(e.getMessage()).build();
+        }
+    }
+
     @POST
     @Path("/players/{playerId}/inventory")
     @Consumes(MediaType.APPLICATION_JSON)
