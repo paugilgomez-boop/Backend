@@ -49,41 +49,30 @@ export DB_NAME="${DB_NAME:-towerdefence}"
 export DB_USER="${DB_USER:-root}"
 export DB_PASS="${DB_PASS:-root}"
 
-export LLM_MODEL="${LLM_MODEL:-qwen:0.5b}"
-export LLM_URL="${LLM_URL:-http://127.0.0.1:11434/api/chat}"
-OLLAMA_BASE="${LLM_URL%/api/chat}"
-OLLAMA_BASE="${OLLAMA_BASE%/api/generate}"
+if [ -f "./llm.env" ]; then
+  # shellcheck disable=SC1091
+  source "./llm.env"
+fi
 
-if curl -sf "${OLLAMA_BASE}/api/tags" >/tmp/ollama_tags.json 2>/dev/null; then
-  echo "Ollama OK en ${OLLAMA_BASE}"
-  echo "Modelos instalados:"
-  grep -o '"name":"[^"]*"' /tmp/ollama_tags.json | cut -d'"' -f4 || true
-  if ! grep -q "\"name\":\"${LLM_MODEL}\"" /tmp/ollama_tags.json; then
-    echo ""
-    echo "AVISO: el modelo '${LLM_MODEL}' NO esta instalado en Ollama."
-    echo "Usa el nombre exacto de 'ollama list', por ejemplo:"
-    echo "  LLM_MODEL=qwen2.5:0.5b ./start_server.sh"
-    echo "O instala el modelo:"
-    echo "  ollama pull ${LLM_MODEL}"
-    echo ""
-  else
-    LLM_TEST="$(curl -sf -X POST "${OLLAMA_BASE}/api/chat" \
-      -H "Content-Type: application/json" \
-      -d "{\"model\":\"${LLM_MODEL}\",\"messages\":[{\"role\":\"user\",\"content\":\"hola\"}],\"stream\":false}" 2>&1 || true)"
-    if echo "${LLM_TEST}" | grep -q '"content"'; then
-      echo "Test Ollama OK con modelo ${LLM_MODEL}"
-    else
-      echo ""
-      echo "AVISO: Ollama no respondio correctamente con '${LLM_MODEL}':"
-      echo "${LLM_TEST}" | head -c 400
-      echo ""
-    fi
-  fi
+export LLM_MODEL="${LLM_MODEL:-grok-4-1-fast-non-reasoning}"
+export LLM_URL="${LLM_URL:-https://api.x.ai/v1/chat/completions}"
+export LLM_API_KEY="${LLM_API_KEY:-}"
+
+if [ -z "${LLM_API_KEY}" ]; then
+  echo ""
+  echo "AVISO: LLM_API_KEY no esta definida."
+  echo "Crea llm.env con: export LLM_API_KEY=xai-..."
+  echo ""
+elif curl -sf -X POST "${LLM_URL}" \
+  -H "Content-Type: application/json" \
+  -H "Authorization: Bearer ${LLM_API_KEY}" \
+  -d "{\"model\":\"${LLM_MODEL}\",\"messages\":[{\"role\":\"user\",\"content\":\"hola\"}],\"stream\":false,\"max_tokens\":16}" \
+  | grep -q '"content"'; then
+  echo "Test xAI Grok OK con modelo ${LLM_MODEL}"
 else
   echo ""
-  echo "AVISO: Ollama no responde en ${OLLAMA_BASE}"
-  echo "  ss -tlnp | grep 11434"
-  echo "  ollama serve"
+  echo "AVISO: xAI no respondio correctamente con '${LLM_MODEL}'."
+  echo "Comprueba LLM_API_KEY, LLM_URL y el nombre del modelo."
   echo ""
 fi
 

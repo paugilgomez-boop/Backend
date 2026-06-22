@@ -24,11 +24,15 @@ public class FaqAssistantClient {
     }
 
     public String getLlmUrl() {
-        return resolveChatUrl(config("llm.url", "LLM_URL", "http://127.0.0.1:11434/api/chat"));
+        return resolveChatUrl(config("llm.url", "LLM_URL", "https://api.x.ai/v1/chat/completions"));
     }
 
     public String getLlmModel() {
-        return config("llm.model", "LLM_MODEL", "qwen:0.5b");
+        return config("llm.model", "LLM_MODEL", "grok-4-1-fast-non-reasoning");
+    }
+
+    public String getLlmApiKey() {
+        return config("llm.apiKey", "LLM_API_KEY", "");
     }
 
     public String testConnection() throws IOException {
@@ -48,6 +52,9 @@ public class FaqAssistantClient {
     }
 
     private String resolveChatUrl(String configuredUrl) {
+        if (usesOpenAiCompatibleApi(configuredUrl)) {
+            return configuredUrl;
+        }
         if (configuredUrl.endsWith("/api/generate")) {
             return configuredUrl.replace("/api/generate", "/api/chat");
         }
@@ -60,18 +67,38 @@ public class FaqAssistantClient {
         return configuredUrl + "/api/chat";
     }
 
-    private String chat(String systemPrompt, String userMessage) throws IOException {
-        String endpoint = getLlmUrl();
-        String model = getLlmModel();
-        String requestBody = "{"
+    private boolean usesOpenAiCompatibleApi(String endpoint) {
+        if (endpoint == null) {
+            return false;
+        }
+        String lower = endpoint.toLowerCase();
+        return lower.contains("x.ai") || lower.contains("openai.com") || !getLlmApiKey().isEmpty();
+    }
+
+    private String buildRequestBody(String model, String systemPrompt, String userMessage, String endpoint) {
+        String messages = "{\"role\":\"system\",\"content\":\"" + jsonEscape(systemPrompt) + "\"},"
+                + "{\"role\":\"user\",\"content\":\"" + jsonEscape(userMessage) + "\"}";
+        if (usesOpenAiCompatibleApi(endpoint)) {
+            return "{"
+                    + "\"model\":\"" + jsonEscape(model) + "\","
+                    + "\"messages\":[" + messages + "],"
+                    + "\"stream\":false,"
+                    + "\"temperature\":0.1,"
+                    + "\"max_tokens\":256"
+                    + "}";
+        }
+        return "{"
                 + "\"model\":\"" + jsonEscape(model) + "\","
-                + "\"messages\":["
-                + "{\"role\":\"system\",\"content\":\"" + jsonEscape(systemPrompt) + "\"},"
-                + "{\"role\":\"user\",\"content\":\"" + jsonEscape(userMessage) + "\"}"
-                + "],"
+                + "\"messages\":[" + messages + "],"
                 + "\"stream\":false,"
                 + "\"options\":{\"temperature\":0.1,\"num_predict\":256}"
                 + "}";
+    }
+
+    private String chat(String systemPrompt, String userMessage) throws IOException {
+        String endpoint = getLlmUrl();
+        String model = getLlmModel();
+        String requestBody = buildRequestBody(model, systemPrompt, userMessage, endpoint);
 
         HttpURLConnection conn = null;
         try {
@@ -84,6 +111,10 @@ public class FaqAssistantClient {
             conn.setDoOutput(true);
             conn.setRequestProperty("Content-Type", "application/json; charset=UTF-8");
             conn.setRequestProperty("Accept", "application/json");
+            String apiKey = getLlmApiKey();
+            if (apiKey != null && !apiKey.trim().isEmpty()) {
+                conn.setRequestProperty("Authorization", "Bearer " + apiKey.trim());
+            }
 
             try (OutputStream os = conn.getOutputStream()) {
                 os.write(requestBody.getBytes(StandardCharsets.UTF_8));

@@ -24,6 +24,16 @@ for /f "tokens=5" %%a in ('netstat -aon ^| findstr :8080') do (
 echo [3/4] Entrando en la carpeta del proyecto...
 cd /d "%~dp0"
 
+if not defined LLM_MODEL set LLM_MODEL=grok-4-1-fast-non-reasoning
+if not defined LLM_URL set LLM_URL=https://api.x.ai/v1/chat/completions
+if not defined LLM_API_KEY (
+  echo.
+  echo AVISO: LLM_API_KEY no esta definida.
+  echo Define la variable de entorno antes de arrancar, por ejemplo:
+  echo   set LLM_API_KEY=xai-tu-clave-aqui
+  echo.
+)
+
 :: 4. Lanzar el servidor de Java
 echo [4/4] Arrancando servidor... (No cierres esta ventana)
 mvn compile exec:java

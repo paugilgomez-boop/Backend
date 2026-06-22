@@ -113,10 +113,10 @@ public class Main {
     logger.info("LLM config url=" + faqClient.getLlmUrl() + " model=" + faqClient.getLlmModel());
     try {
         String ping = faqClient.testConnection();
-        logger.info("Ollama OK: " + ping);
+        logger.info("LLM OK: " + ping);
     } catch (IOException e) {
-        logger.error("Ollama NO disponible desde Java: " + e.getMessage());
-        logger.error("Comprueba en el servidor: echo $LLM_URL && curl http://127.0.0.1:11434/api/tags");
+        logger.error("LLM NO disponible desde Java: " + e.getMessage());
+        logger.error("Comprueba en el servidor: echo $LLM_URL $LLM_MODEL && test -n \"$LLM_API_KEY\"");
     }
 
     System.out.println("Press enter to stop the server...");
